@@ -1,0 +1,21 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+
+ <h1>Communication list</h1>
+
+    {% if communication_list %}
+    <ul>
+
+      {% for communication in communication_list %}
+      <li>
+        <a href="{{ communication.get_absolute_url }}">{{ communication.name }}</a> ({{ communication.consumer.name }})
+      </li>
+      {% endfor %}
+
+    </ul>
+    {% else %}
+      <p>There are no communications.</p>
+    {% endif %}
+
+{% endblock %}

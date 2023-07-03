@@ -1,0 +1,17 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+
+<h1>Оборудование</h1>
+
+
+<h3>Всего оборудования: {{ all_equipments }}</h3>
+
+<p>Из них:</p>
+<ul>
+    {% for equipment in equipments %}
+        <li>{{ equipment.0 }} : {{ equipment.1 }}</li>
+    {% endfor %}
+</ul>
+
+{% endblock %}

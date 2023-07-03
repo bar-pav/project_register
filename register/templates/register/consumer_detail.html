@@ -1,0 +1,17 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+
+ <h1>Consumer Detail</h1>
+
+    {% if consumer %}
+        {{ consumer.name }} ({{ consumer.phone }})
+        <p>Communications:</p>
+        {% for communication in consumer.communications.all %}
+            <p style="margin-left: 15px;">{{ communication }}</p>
+        {% endfor %}
+    {% else %}
+      <p>There are no consumer detail</p>
+    {% endif %}
+
+{% endblock %}

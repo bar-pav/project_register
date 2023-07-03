@@ -1,0 +1,23 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+
+ <h1>Communication Detail</h1>
+    {% if communication %}
+        {{ communication.name }} ({{ communication.consumer }})
+        {% if communication.connection.all %}
+            <p></p>
+            <p>Connection points:</p>
+            <ul>
+            {% for connection in communication.connection.all %}
+                <li>{{ connection.station }} -- {{ connection.line }}
+<!--                    {% if not forloop.last %} &ndash;&gt; {% endif %}-->
+                </li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% else %}
+        <p>There are no communication detail</p>
+    {% endif %}
+
+{% endblock %}

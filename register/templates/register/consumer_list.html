@@ -1,0 +1,21 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+
+ <h1>Consumers list</h1>
+
+    {% if consumer_list %}
+    <ul>
+
+      {% for consumer in consumer_list %}
+      <li>
+        <a href="{{ consumer.get_absolute_url }}">{{ consumer.name }}</a>
+      </li>
+      {% endfor %}
+
+    </ul>
+    {% else %}
+      <p>There are no consumers.</p>
+    {% endif %}
+
+{% endblock %}
