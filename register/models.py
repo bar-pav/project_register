@@ -52,6 +52,9 @@ class EndPoint(models.Model):
     code = models.CharField(max_length=100, null=True, blank=True)
     note = models.TextField(null=True, blank=True)
 
+    def get_absolute_url(self):
+        return reverse('endpoint_detail', args=[str(self.id)])
+
     def __str__(self):
         return f"{self.name}"
 

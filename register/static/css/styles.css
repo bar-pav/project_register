@@ -4,7 +4,7 @@
     list-style: none;
 }
 
-span {
+span.logo {
     font-size: 1.9em;
     color: green;
 }

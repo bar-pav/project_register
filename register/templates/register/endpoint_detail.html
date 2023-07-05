@@ -1,0 +1,14 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+
+ <h1>Endpoint Detail</h1>
+    {% if endpoint %}
+        {{ endpoint.name }} (code: {{ endpoint.code }})
+        {{ endpoint.note }}
+        <a href="{% url 'endpoint_edit' endpoint.id %}">Изменить имя</a> 
+    {% else %}
+        <p>There are no endpoint detail</p>
+    {% endif %}
+
+{% endblock %}

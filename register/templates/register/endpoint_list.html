@@ -1,0 +1,21 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+
+ <h1>Endpoints list</h1>
+
+    {% if endpoint_list %}
+    <ul>
+
+      {% for endpoint in endpoint_list %}
+      <li>
+        <a href="{{ endpoint.get_absolute_url }}">{{ endpoint.name }}</a> 
+      </li>
+      {% endfor %}
+
+    </ul>
+    {% else %}
+      <p>There are no communications.</p>
+    {% endif %}
+
+{% endblock %}
