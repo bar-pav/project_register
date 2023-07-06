@@ -16,10 +16,10 @@
         <div class="container-fluid">
             <div class="row">
                 <div class="col-sm-2">
-                    <span class="logo">Загрузка<sup>&reg;</sup></span>
+                    <a href="{% url 'index' %}"><span class="logo">Загрузка<sup>&reg;</sup></span></a>
                     {% block sidebar %}
                         <ul class="sidebar-nav">
-                            <li><a href="{% url 'index' %}">Оборудование</a></li>
+                            <li><a href="{% url 'equipments' %}">Оборудование</a></li>
                             <li><a href="{% url 'communications' %}">Связи</a></li>
                             <li><a href="{% url 'consumers' %}">Потребители</a></li>
                             <li><a href="{% url 'endpoints' %}">Endpoints</a></li>

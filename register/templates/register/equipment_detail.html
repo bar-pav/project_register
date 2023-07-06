@@ -1,0 +1,19 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+
+<h1>{{ equipment.name }}<sub>    ({{ equipment.get_type_display }})</sub></h1>
+
+
+<p>Location: {{ equipment.location }}</p>
+
+<p>Ports: </p>
+<ul>
+    {% for port in equipment.ports.all %}
+        <li>
+            <span style="{% if port.station or port.line %}color: red;{% endif %}">{{ port.port_name }}</span>
+        </li>
+    {% endfor %}
+</ul>
+
+{% endblock %}

@@ -4,8 +4,10 @@ from . import views
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path('equipments/', views.equipment_list, name='equipments'),
+    re_path(r'^equipment/(?P<pk>\d+)$', views.EquipmentDetail.as_view(), name='equipment_detail'),
     path('communications/', views.CommunicationsListView.as_view(), name='communications'),
-    re_path('^communication/(?P<pk>\d+)$', views.CommunicationDetailView.as_view(), name='communication_detail'),
+    re_path(r'^communication/(?P<pk>\d+)$', views.CommunicationDetailView.as_view(), name='communication_detail'),
     path('communication/create', views.CommunicationCreateView.as_view(), name='communication_create'),
     path('communication/<pk>/update', views.CommunicationUpdateView.as_view(), name='communication_update'),
     path('communication/<pk>/delete', views.CommunicationDeleteView.as_view(), name='communication_delete'),

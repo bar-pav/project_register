@@ -26,6 +26,26 @@ def index(request):
     return render(request, 'index.html', context=context)
 
 
+def equipment_list(request):
+    equipments_by_type = {}
+    equipments_count = 0
+    categories = Equipment.type_choices
+    for category in categories:
+        objects = Equipment.objects.filter(type__exact=category[0])
+        equipments_by_type[category[1]] = (objects.all(), objects.count())
+        equipments_count += objects.count()
+    context = {
+        'equipments': equipments_by_type,
+        'equipments_count': equipments_count,
+    }
+
+    return render(request, 'equipments.html', context=context)
+
+
+class EquipmentDetail(generic.DetailView):
+    model = Equipment
+
+
 class EndPointsListView(generic.ListView):
     model = EndPoint
 

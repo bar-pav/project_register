@@ -1,0 +1,24 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+
+<h1>Оборудование</h1>
+
+
+<h3>Всего оборудования: {{ equipments_count }}</h3>
+
+<p>Из них:</p>
+<ul>
+    {% for category, value in equipments.items %}
+        <li>{{ category }} ({{value.1}}):
+            <ul>
+                {% for equipment in value.0 %}
+                    <li><a href="{% url 'equipment_detail' equipment.id %}">{{ equipment }}</a></li>
+                {% endfor %}
+            </ul>
+        </li>
+
+    {% endfor %}
+</ul>
+
+{% endblock %}
