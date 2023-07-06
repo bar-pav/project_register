@@ -4,12 +4,16 @@
 
  <h1>Communication list</h1>
 
+    <a href="{% url 'communication_create' %}">Create new communication.</a>
+    <br>
+    <p>
     {% if communication_list %}
     <ul>
-
       {% for communication in communication_list %}
       <li>
         <a href="{{ communication.get_absolute_url }}">{{ communication.name }}</a> ({{ communication.consumer.name }})
+        <a href="{% url 'communication_update' communication.pk %}?next={{ request.path }}">  :upd:</a>
+        <a href="{% url 'communication_delete' communication.pk %}">  del:</a>
       </li>
       {% endfor %}
 

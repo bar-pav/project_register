@@ -31,3 +31,10 @@ urlpatterns += [
     path('register/', include('register.urls')),
     path('', RedirectView.as_view(url='/register/', permanent=True)),
 ]
+
+urlpatterns += [
+    path('accounts/', include('django.contrib.auth.urls')),
+]
+
+
+import django.contrib.auth.urls as dcu

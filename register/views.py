@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from django.views import generic
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.http import HttpResponseRedirect
 
 
@@ -36,7 +36,7 @@ class EndPointDetailView(generic.DetailView):
 
 class CommunicationsListView(generic.ListView):
     model = Communication
-    paginate_by = 5
+    paginate_by = 10
     ordering = ['-create_date']
 
 
@@ -84,3 +84,21 @@ def endpoint_edit(request, pk):
         form = EndPointEditForm(initial={'endpoint_name': help_msg,})
 
     return render(request, 'register/endpoint_edit.html', {'form': form, 'endpoint_inst':endpoint_inst})
+
+
+class CommunicationCreateView(generic.edit.CreateView):
+    model = Communication
+    fields = "__all__"
+
+
+class CommunicationUpdateView(generic.edit.UpdateView):
+    model = Communication
+    fields = "__all__"
+    
+    def get_success_url(self):
+        return self.request.GET.get('next')
+
+
+class CommunicationDeleteView(generic.edit.DeleteView):
+    model = Communication
+    success_url = reverse_lazy('communications')

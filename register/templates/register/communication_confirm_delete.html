@@ -1,0 +1,15 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+
+<h1>Delete Communication</h1>
+
+<p>Are you sure you want to delete the Communication: {{ communication }}?</p>
+
+<form action="" method="POST">
+    {% csrf_token %}
+    <input type="submit" value="Yes, delete.">
+    <a href="{% url 'communications' %}">No</a>
+</form>
+
+{% endblock %}
