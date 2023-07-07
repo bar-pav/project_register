@@ -16,5 +16,6 @@ urlpatterns = [
     path('endpoints/', views.EndPointsListView.as_view(), name='endpoints'),
     path('endpoint/<pk>', views.EndPointDetailView.as_view(), name='endpoint_detail'),
     path('endpoints/<pk>/edit', views.endpoint_edit, name='endpoint_edit'),
+    path('connection_form', views.connection_form_view, name='connection_form'),
 
 ]

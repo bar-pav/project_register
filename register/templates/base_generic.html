@@ -23,7 +23,7 @@
                             <li><a href="{% url 'communications' %}">Связи</a></li>
                             <li><a href="{% url 'consumers' %}">Потребители</a></li>
                             <li><a href="{% url 'endpoints' %}">Endpoints</a></li>
-                            
+                            <li><a href="{% url 'connection_form' %}">Conection</a></li>
                             <li><a href="">_</a></li>
                             {% if user.is_authenticated %}
                                 <li>{{ user.get_username }}</li>

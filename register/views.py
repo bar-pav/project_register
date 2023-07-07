@@ -4,8 +4,8 @@ from django.urls import reverse, reverse_lazy
 from django.http import HttpResponseRedirect
 
 
-from .models import Equipment, EndPoint, Consumer, Communication, Connection
-from .forms import EndPointEditForm
+from .models import Equipment, EndPoint, Consumer, Communication, Connection, Port
+from .forms import forms, EndPointEditForm, ConnectionForm
 # Create your views here.
 
 
@@ -122,3 +122,17 @@ class CommunicationUpdateView(generic.edit.UpdateView):
 class CommunicationDeleteView(generic.edit.DeleteView):
     model = Communication
     success_url = reverse_lazy('communications')
+
+
+def connection_form_view(request):
+    connection_formset_factory = forms.formset_factory(ConnectionForm, extra=2)
+    
+    connection_formset = connection_formset_factory(initial=[{'connection_point': Port.objects.first()}])
+
+    # form = connection_formset
+
+    context = {
+        'formset': connection_formset,
+    }
+    
+    return render(request, 'connection_form.html', context=context)

@@ -1,4 +1,5 @@
 from django import forms
+from .models import Connection, Port
 
 
 class EndPointEditForm(forms.Form):
@@ -11,3 +12,11 @@ class EndPointEditForm(forms.Form):
             raise forms.ValidationError("Field can't be empty.")
         
         return name
+    
+
+class ConnectionForm(forms.Form):
+    choises = Port.objects.all
+    connection_point = forms.ChoiceField(choices=(('a','1'), ('b','2'), ('c','3'),))
+
+
+# class EndPoointAddFormset()
