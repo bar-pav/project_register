@@ -14,16 +14,21 @@
 
 </form> -->
 
-<form method="post">
+<form method="post">{% csrf_token %}
     {{ formset.management_form }}
-    {% for form in formset %}
-        <ul>
-            <li>{{ form.connection_point }}</li>
-            {% if formset.can_delete %}
-                <li>{{ form.DELETE }}</li>
-            {% endif %}
-        </ul>
-    {% endfor %}
+    <input type="submit" name="add_new_extra_field" value="add_empty">
+    {% if formset %}
+        {% for form in formset %}
+            <ul>
+                <li>{{ form.0 }} </li>
+            </ul>
+        {% endfor %}
+    Количество форм:  {{ num_forms }}
+    {% endif %}
+    <p></p>
+    <input type="submit" name="delete_first" value="delete_first">
+<!--    <input type="submit" name="remove_extra_field" value="Add">-->
+
 </form>
 
 {% endblock %}
