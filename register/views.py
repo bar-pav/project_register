@@ -1,3 +1,5 @@
+import re
+
 from django.shortcuts import render, get_object_or_404
 from django.views import generic
 from django.urls import reverse, reverse_lazy
@@ -200,21 +202,30 @@ class CommunicationDeleteView(generic.edit.DeleteView):
 
 def connection_form_view(request):
     my_formset = CustomFormset(ConnectionForm, request.POST)
+    re_template = re.compile(r'delete-(\d+)')
 
     # print('+' * 50)
     # print(connection_formset)
     if request.method == 'POST':
-        if 'add_new_extra_field' in request.POST:
+        if 'add_field' in request.POST:
             print('ADD matches')
             my_formset.add_empty_form()
-            # print(my_formset.max_index)
-        if 'delete_first' in request.POST:
+            # print(my_formset[0])
+        if 'delete_last' in request.POST:
             my_formset.delete_form()
             print('DELETE matches')
+        for field in request.POST:
+            res = re_template.findall(field)
+            if res:
+                my_formset.delete_form(index=int(res[0]))
+
+        if 'submit' in request.POST:
+            my_formset.bound_forms(request.POST)
     # print('=' * 50)
-    print(my_formset)
+    # print(my_formset)
 
     context = {
         'formset': my_formset,
+        'num_forms': len(my_formset)
     }
     return render(request, 'connection_form.html', context=context)
