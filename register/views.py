@@ -218,9 +218,8 @@ def connection_form_view(request):
             res = re_template.findall(field)
             if res:
                 my_formset.delete_form(index=int(res[0]))
-
         if 'submit' in request.POST:
-            my_formset.bound_forms(request.POST)
+            my_formset.bound_forms()
     # print('=' * 50)
     # print(my_formset)
 

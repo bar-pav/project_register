@@ -22,17 +22,20 @@ class ConnectionForm(forms.Form):
 
 class ManagementForm(forms.Form):
     # Uses for save information between page reloading.
-    total_forms = forms.IntegerField(widget=HiddenInput)
+    last_index = forms.IntegerField(widget=HiddenInput)
+    num_of_forms = forms.IntegerField(widget=HiddenInput)
 
 
 class CustomFormset:
     def __init__(self, form_class, request_post=None, prefix='form'):
         self.form_class = form_class
-        self.request_post = request_post
-        self.total_forms = self.get_total_forms()
+        self.form_fields = self.get_form_fields()
+        self.request_post = request_post.copy()
+        self.num_of_forms = self.get_num_of_forms()
+        self.last_index = self.get_last_index()
         self.management_form = self.get_management_form()
         self.prefix = prefix
-        self.forms = self.create_forms()
+        self.forms = self.create_empty_forms()
 
     def __iter__(self):
         return iter(self.forms)
@@ -46,52 +49,85 @@ class CustomFormset:
     def __len__(self):
         return len(self.forms)
 
+    def get_form_fields(self):
+        if 'fields' in self.form_class.__dict__:
+            return self.form_class.fields
+        else:
+            return list(self.form_class.__dict__['declared_fields'].keys())
+
     def get_management_form(self):
-        if 'total_forms' in self.request_post:
+        if 'last_index' in self.request_post:
             form = ManagementForm(self.request_post)
             form.full_clean()
             return form
-        form = ManagementForm(data={'total_forms': '0'})
+        form = ManagementForm(data={'num_of_forms': '0', 'last_index': '0'})
         form.full_clean()
         return form
 
     def update_management_form(self):
-        return ManagementForm(data={'total_forms': self.total_forms})
+        return ManagementForm(data={'last_index': self.last_index, 'num_of_forms': self.num_of_forms})
 
-    def get_total_forms(self):
-        return self.get_management_form().cleaned_data['total_forms']
+    def get_num_of_forms(self):
+        return self.get_management_form().cleaned_data['num_of_forms']
 
-    def create_forms(self):
-        return [(self.create_form(index=i), i) for i in range(self.total_forms)]
+    def get_last_index(self):
+        return self.get_management_form().cleaned_data['last_index']
 
-    def create_form(self, data=None, index=None):
-        return self.form_class(data=data, prefix=self.add_prefix(index))
+    def bound_forms(self, delete_index=None):
 
-    def add_empty_form(self):
-        self.bound_forms(self.request_post)
-        self.total_forms += 1
-        self.management_form = self.update_management_form()
-        self.forms.append((self.create_form(index=self.total_forms - 1), self.total_forms))
-
-    def delete_form(self, index=None):
-        if index is not None and 0 <= index < len(self.forms):  # TODO Fix: Not work correct.
-            self.bound_forms(self.request_post)
-            self.management_form = self.update_management_form()
-            self.forms.pop(index)
-        else:
-            # if len(self.forms) > 0:
-            self.bound_forms(self.request_post)
-            self.total_forms -= 1
-            self.management_form = self.update_management_form()
-            self.forms.pop()
-
-    def bound_forms(self, data):
-        # print(data)
-        self.forms = [((self.create_form(data=data, index=index)), index) for index, _ in enumerate(self.forms)]
+        # if delete_index is not None:
+        #     pass
+        self.forms = [(self.create_form(data=self.get_form_kwargs(index, delete_index=delete_index)), index) for index in range(self.num_of_forms)]
         for bf in self.forms:
             bf[0].full_clean()
-            print(bf[0].cleaned_data)
+            print('bound_forms > cleaned_data: ', bf[0].cleaned_data)
         # print(data)
+
+    def get_form_kwargs(self, index, delete_index=None):
+        print('get_form_kwargs > num_of_forms', self.num_of_forms)
+        # data = {}
+        # data.update(self.request_post)
+        # print(data)
+        # print(data['connection_point'])
+        # if self.num_of_forms < 2:
+        #     return self.request_post
+        # print('Get kwargs')
+        # print('index', index)
+        # print(self.request_post)
+        # print(self.form_fields)
+        # print(self.request_post.get('connection_point'))
+        # print({field: self.request_post.getlist(field) for field in self.form_fields})
+        if delete_index is not None:
+            print('get_form_kwargs > delete_index', delete_index)
+            print('get_form_kwargs > index before deleted form', index)
+            if index >= delete_index:
+                index += 1
+        print('get_form_kwargs > index after deleted form: ', index)
+        print('get_form_kwargs > request_data: ', self.request_post)
+        print('get_form_kwargs > fields: ', {field: self.request_post.getlist(field) for field in self.form_fields})
+        return {field: self.request_post.getlist(field)[index] for field in self.form_fields}
+
+    def create_empty_forms(self):
+        return [(self.create_form(), i) for i in range(self.num_of_forms)]
+
+    def create_form(self, data=None):
+        return self.form_class(data=data)
+
+    def add_empty_form(self):
+        self.bound_forms()
+        self.forms.append((self.create_form(), self.num_of_forms))
+        self.num_of_forms += 1
+        self.management_form = self.update_management_form()
+        print('add_empty_form > num_of_forms: ', self.num_of_forms)
+
+    def delete_form(self, index=None):
+        if index is None:  # TODO Fix: Not work correctly.
+            index = self.num_of_forms - 1
+        self.num_of_forms -= 1
+        self.bound_forms(delete_index=index)
+        self.management_form = self.update_management_form()
+        print('delete_form > pop index: ', index)
+        print('delete_form > num_of_forms: ', self.num_of_forms)
 
     def is_valid(self):
         return all([form[0].is_valid() for form in self.forms])
