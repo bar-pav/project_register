@@ -202,7 +202,8 @@ class CommunicationDeleteView(generic.edit.DeleteView):
 
 def connection_form_view(request):
     my_formset = CustomFormset(ConnectionForm, request.POST)
-    re_template = re.compile(r'delete-(\d+)')
+    re_delete = re.compile(r'delete-(\d+)')
+    re_add = re.compile(r'add-(\d+)')
 
     # print('+' * 50)
     # print(connection_formset)
@@ -215,9 +216,12 @@ def connection_form_view(request):
             my_formset.delete_form()
             print('DELETE matches')
         for field in request.POST:
-            res = re_template.findall(field)
-            if res:
-                my_formset.delete_form(index=int(res[0]))
+            result_delete = re_delete.findall(field)
+            result_add = re_add.findall(field)
+            if result_delete:
+                my_formset.delete_form(index=int(result_delete[0]))
+            if result_add:
+                my_formset.insert_empty_form(int(result_add[0]))
         if 'submit' in request.POST:
             my_formset.bound_forms()
     # print('=' * 50)

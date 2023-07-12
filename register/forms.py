@@ -77,7 +77,7 @@ class CustomFormset:
 
         # if delete_index is not None:
         #     pass
-        self.forms = [(self.create_form(data=self.get_form_kwargs(index, delete_index=delete_index)), index) for index in range(self.num_of_forms)]
+        self.forms = [[self.create_form(data=self.get_form_kwargs(index, delete_index=delete_index)), index] for index in range(self.num_of_forms)]
         for bf in self.forms:
             bf[0].full_clean()
             print('bound_forms > cleaned_data: ', bf[0].cleaned_data)
@@ -108,17 +108,25 @@ class CustomFormset:
         return {field: self.request_post.getlist(field)[index] for field in self.form_fields}
 
     def create_empty_forms(self):
-        return [(self.create_form(), i) for i in range(self.num_of_forms)]
+        return [[self.create_form(), i] for i in range(self.num_of_forms)]
 
     def create_form(self, data=None):
         return self.form_class(data=data)
 
     def add_empty_form(self):
         self.bound_forms()
-        self.forms.append((self.create_form(), self.num_of_forms))
+        self.forms.append([self.create_form(), self.num_of_forms])
         self.num_of_forms += 1
         self.management_form = self.update_management_form()
         print('add_empty_form > num_of_forms: ', self.num_of_forms)
+
+    def insert_empty_form(self, index):
+        self.bound_forms()
+        for i in self.forms[index:]:
+            i[1] += 1
+        self.forms.insert(index, [self.create_form(), index])
+        self.num_of_forms += 1
+        self.management_form = self.update_management_form()
 
     def delete_form(self, index=None):
         if index is None:  # TODO Fix: Not work correctly.
