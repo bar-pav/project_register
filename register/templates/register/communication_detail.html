@@ -7,7 +7,7 @@
         {{ communication.name }} ({{ communication.consumer }})
         {% if communication.connection.all %}
             <p></p>
-            <p>Connection points:</p>
+            <p>Connection points: <a href="{% url 'connection_edit' communication.pk %}">Edit</a></p>
             <ul>
             {% for connection in communication.connection.all %}
                 <li>{{ connection.station }} -- {{ connection.line }}

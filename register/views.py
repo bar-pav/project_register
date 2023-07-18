@@ -4,6 +4,7 @@ from django.shortcuts import render, get_object_or_404
 from django.views import generic
 from django.urls import reverse, reverse_lazy
 from django.http import HttpResponseRedirect
+from django.forms import modelformset_factory
 
 
 from .models import Equipment, EndPoint, Consumer, Communication, Connection, Port
@@ -126,80 +127,6 @@ class CommunicationDeleteView(generic.edit.DeleteView):
     success_url = reverse_lazy('communications')
 
 
-# def connection_form_view(request):
-#     # num_forms = 0
-#     prefix = 'form'
-#     if request.method == 'POST':
-#         if 'add_new_extra_field' in request.POST:
-#             print('add_new_extra_field')
-#
-#             num_forms = int(request.session.get('num_forms', 0))
-#             num_forms += 1
-#             request.session['num_forms'] = num_forms
-#
-#             print(num_forms)
-#
-#             connection_formset_factory = forms.formset_factory(ConnectionForm, extra=num_forms, can_delete=True)
-#
-#             print(request.POST)
-#             data = {}
-#             print('---------------------')
-#             for key in request.POST:
-#                 data[key] = request.POST[key]
-#                 # print(key, ': ', end=' ')
-#                 # print(request.POST[key])
-#             print('-' * 20)
-#
-#             data.update({'form-TOTAL_FORMS': str(num_forms),
-#                          'form-INITIAL_FORMS': str(num_forms - 1),
-#                          # 'form-MIN_NUM_FORMS': 1,
-#                          # 'form-MAX_NUM_FORMS': '100',
-#                          })
-#
-#             print(data)
-#             connection_formset = connection_formset_factory(data, prefix=prefix)
-#
-#             context = {
-#                 'formset': connection_formset,
-#                 'num_forms': num_forms,
-#             }
-#
-#     else:
-#         connection_formset_factory = forms.formset_factory(ConnectionForm, extra=0, can_delete=True)
-#         print(connection_formset_factory.__dict__)
-#         connection_formset = connection_formset_factory(prefix=prefix)
-#         num_forms = 0
-#         request.session['num_forms'] = num_forms
-#         context = {
-#             'formset': connection_formset,
-#             'num_forms': num_forms,
-#         }
-#         print(connection_formset)
-#     return render(request, 'connection_form.html', context=context)
-
-# def connection_form_view(request):
-#     connection_formset_factory = forms.formset_factory(ConnectionForm, formset=ConnectionFormSet, extra=1, can_delete=True)
-#     print(connection_formset_factory.__dict__)
-#     connection_formset = connection_formset_factory()
-#     num_forms = 0
-#     request.session['num_forms'] = num_forms
-#     context = {
-#         'formset': connection_formset,
-#         'num_forms': num_forms,
-#         'fi': connection_formset.get_forms_and_index(),
-#     }
-#     # print('+' * 50)
-#     # print(connection_formset)
-#     if request.method == 'POST':
-#         if 'add_new_extra_field' in request.POST:
-#             connection_formset.add_form()
-#         if 'delete_first' in request.POST:
-#             connection_formset.delete_form(0)
-#     # print('=' * 50)
-#     # print(connection_formset)
-#     return render(request, 'connection_form.html', context=context)
-
-
 def connection_form_view(request):
     my_formset = CustomFormset(ConnectionForm, request.POST)
     re_delete = re.compile(r'delete-(\d+)')
@@ -232,3 +159,45 @@ def connection_form_view(request):
         'num_forms': len(my_formset)
     }
     return render(request, 'connection_form.html', context=context)
+
+
+from .forms import PortModelForm, ConnectionPointForm
+
+
+def connection_edit(request, pk):
+    communication = Communication.objects.get(pk=pk)
+    connection_points = Connection.objects.filter(communication__exact=communication).all()
+    initial_data = {'equipment': [], 'port_name': []}
+
+    if len(connection_points) > 1:
+        print('connection_point:', connection_points[0].station.equipment, connection_points[0].station)
+        initial_data['equipment'].append(connection_points[0].station.equipment)
+        initial_data['port_name'].append(connection_points[0].station)
+        for point in connection_points:
+            print('connection_point:', point.line.equipment, point.line)
+            initial_data['equipment'].append(point.line.equipment)
+            initial_data['port_name'].append(point.line)
+    else:
+        print('connection_point:', connection_points[0].station.equipment, connection_points[0].station)
+        initial_data['equipment'].append(connection_points[0].station.equipment)
+        initial_data['port_name'].append(connection_points[0].station)
+
+        print('connection_point:', connection_points[0].line.equipment, connection_points[0].line)
+        initial_data['equipment'].append(connection_points[0].line.equipment)
+        initial_data['port_name'].append(connection_points[0].line)
+    if request.method == "GET":
+        my_formset = CustomFormset(PortModelForm, request.POST, initial_data=initial_data)
+    if request.method == 'POST':
+        my_formset = CustomFormset(ConnectionPointForm, request.POST)
+        my_formset.cath_action_with_form()
+    context = {
+        'communication': communication,
+        'formset': my_formset,
+        'num_forms': len(my_formset),
+    }
+    return render(request, 'connection_edit.html', context=context)
+
+
+def get_ports(request):
+    print('get_ports >')
+    print(request)

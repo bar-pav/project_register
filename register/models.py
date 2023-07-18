@@ -37,14 +37,16 @@ class Port(models.Model):
         ('V', 'virtual')
     ]
 
-    equipment = models.ForeignKey('Equipment', on_delete=models.RESTRICT, related_name='ports')
+    equipment = models.ForeignKey('Equipment', on_delete=models.RESTRICT, related_name='ports', blank=True)
     interface_type = models.ForeignKey('InterfaceType', on_delete=models.RESTRICT, related_name='ports')
     media_type = models.CharField(max_length=1, choices=media_type_choices, default='E')
-    port_name = models.CharField(max_length=15)
+    port_name = models.CharField(max_length=15, blank=True)
     note = models.TextField(null=True, blank=True)
 
+    connected_to = models.OneToOneField('Port', on_delete=models.RESTRICT, related_name='to_port', blank=True, null=True)
+
     def __str__(self):
-        return f"{self.equipment} / {self.port_name}"
+        return f"{self.port_name}"
 
 
 class EndPoint(models.Model):

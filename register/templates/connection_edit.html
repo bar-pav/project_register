@@ -1,0 +1,73 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+
+<h1>Edit Connection for {{ communication }}</h1>
+
+<form method="post">{% csrf_token %}
+    {{ formset.management_form }}
+    <input type="submit" name="add_field" value="add empty">
+    <input type="submit" name="delete_last" value="delete last">
+
+    {% if formset %}
+        Количество форм:  {{ num_forms }}
+        {% for form in formset %}
+            <ul>
+                <li><input type="submit" name="add-{{ form.1 }}" value="insert field {{ form.1 }}"></li>
+                <li>{{ form.0 }}<input type="submit" name="delete-{{ form.1 }}" value="delete field {{ form.1 }}"></li>
+            </ul>
+        <br>
+        {% endfor %}
+
+
+    {% endif %}
+    <p></p>
+<!--    {{ port }}-->
+<!--    <input type="submit" name="remove_extra_field" value="Add">-->
+
+    <script>
+        $(document).ready(
+            $("select[name='equipment']").change(function () {
+                // создаем AJAX-вызов
+                $.ajax({
+                    data: {
+                            'equipment': $(this).val(),
+                            'id': $(this).context.attributes.id.value,
+                            }, // получаем данные формы
+                    url: "{% url 'get_ports' %}",
+                    // если успешно, то
+                    success: function (response) {
+                        if (response.is_taken == true) {
+                            $('#id_username').removeClass('is-valid').addClass('is-invalid');
+                            $('#id_username').after('Это имя пользователя недоступно!')
+                        }
+                        else {
+                            $('#id_username').removeClass('is-invalid').addClass('is-valid');
+                            $('#usernameError').remove();
+                        }
+                    },
+                    // если ошибка, то
+                    error: function (response) {
+                        // предупредим об ошибке
+                        console.log(response.responseJSON.errors)
+                    }
+                });
+                return false;
+            })
+        )
+    </script>
+
+
+    {% if connection_forms %}
+    {% for form in connection_forms%}
+            <p>{{ form }}</p>
+    {% endfor %}
+    {% endif %}
+
+
+
+
+    <input type="submit" name="submit" value="create">
+</form>
+
+{% endblock %}
