@@ -3,7 +3,7 @@ import re
 from django.shortcuts import render, get_object_or_404
 from django.views import generic
 from django.urls import reverse, reverse_lazy
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse, HttpResponse
 from django.forms import modelformset_factory
 
 
@@ -199,5 +199,19 @@ def connection_edit(request, pk):
 
 
 def get_ports(request):
+    if request.method == 'GET' and request.GET.get('equipment'):
+        equipment = Equipment.objects.get(pk=int(request.GET.get('equipment')))
+        field_id = request.GET.get('id').split('_')[1]
+        form = PortModelForm(initial={'equipment': equipment},
+                             equipment=equipment,
+                             auto_id=CustomFormset.get_auto_id(field_id))
+        print(form)
+        context = {
+            'form': [form, field_id]
+        }
+        return render(request, 'connection_edit_ajax_response.html', context=context)
+
+    else:
+        print('NO EQUIPMENT')
     print('get_ports >')
     print(request)

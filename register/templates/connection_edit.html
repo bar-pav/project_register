@@ -12,10 +12,10 @@
     {% if formset %}
         Количество форм:  {{ num_forms }}
         {% for form in formset %}
-            <ul>
-                <li><input type="submit" name="add-{{ form.1 }}" value="insert field {{ form.1 }}"></li>
-                <li>{{ form.0 }}<input type="submit" name="delete-{{ form.1 }}" value="delete field {{ form.1 }}"></li>
-            </ul>
+            <div class="form_instance">
+                <div><input type="submit" name="add-{{ form.1 }}" value="insert field {{ form.1 }}"></div>
+                <div>{{ form.0 }}<input type="submit" name="delete-{{ form.1 }}" value="delete field {{ form.1 }}"></div>
+            </div>
         <br>
         {% endfor %}
 
@@ -27,19 +27,24 @@
 
     <script>
         $(document).ready(
-            $("select[name='equipment']").change(function () {
+            $('.form_instance').on('change', "select[name*='equipment']", (e) => {
+                console.log(e.delegateTarget, $(this), this)
                 // создаем AJAX-вызов
                 $.ajax({
                     data: {
-                            'equipment': $(this).val(),
-                            'id': $(this).context.attributes.id.value,
-                            }, // получаем данные формы
+                            'equipment': e.target.value,
+                            'id': e.target.attributes.id.value,
+                            },                                              // получаем данные формы
                     url: "{% url 'get_ports' %}",
+                    context: e.delegateTarget,
                     // если успешно, то
                     success: function (response) {
-                        if (response.is_taken == true) {
-                            $('#id_username').removeClass('is-valid').addClass('is-invalid');
-                            $('#id_username').after('Это имя пользователя недоступно!')
+                            console.log(response)
+                            console.log('this = ', $(this))
+
+                        if (response) {
+                            console.log($(this))
+                            $(this).html(response);
                         }
                         else {
                             $('#id_username').removeClass('is-invalid').addClass('is-valid');
