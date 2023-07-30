@@ -11,7 +11,12 @@
 <ul>
     {% for port in equipment.ports.all %}
         <li>
-            <span style="{% if port.station or port.line %}color: red;{% endif %}">{{ port.port_name }}</span>
+            <span style="{% if port.connected_to or port.connected_from %}color: red;{% endif %}">{{ port.port_name }}
+                {% if port.communication or port.connected_from.communication %}
+                    [Связь {% if port.communication%}{{ port.communication }}
+                                {% else %} {{ port.connected_from.communication }}
+                            {% endif %}]
+            {% endif %}</span>
         </li>
     {% endfor %}
 </ul>

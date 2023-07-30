@@ -1,8 +1,10 @@
 import re
 
 from django import forms
+from django.core.exceptions import ValidationError
 from django.forms.widgets import HiddenInput
 from .models import Connection, Port, Equipment
+from django.forms import formset_factory
 
 
 class ConnectionPointForm(forms.Form):
@@ -22,7 +24,7 @@ class EndPointEditForm(forms.Form):
             raise forms.ValidationError("Field can't be empty.")
         
         return name
-    
+
 
 class ConnectionForm(forms.Form):
     connection_point = forms.CharField(max_length=100, help_text='max 100 symbols', required=False)
@@ -30,21 +32,45 @@ class ConnectionForm(forms.Form):
     # field_2 = forms.CharField(max_length=100, help_text='max 100 symbols', required=False)
 
 
-class PortModelForm(forms.ModelForm):
-    def __init__(self, equipment=None, *args, **kwargs):
+class PortModelForm(forms.Form):
+    equipment = forms.ModelChoiceField(queryset=None, required=False)
+    port_name = forms.ModelChoiceField(queryset=Port.objects.all(), required=False, validators=[])
+    description = forms.CharField(required=False)
+
+    def __init__(self, *args, **kwargs):
         super(PortModelForm, self).__init__(*args, **kwargs)
-        self.equipment = equipment
-        self.fields['port_name'] = forms.ModelChoiceField(queryset=self.port_queryset(), required=False)
+        # if self.data:
+        #     self.data['port_name'] = Port.objects.get(pk=int(self.data['port_name'])).port_name
+        #     print('DATA :', self.data)
+
+        # print('---------------------------->', Port.objects.filter(equipment__exact=self.equipment))
+        # print('equipment: ', type(equipment), equipment)
+        print('initial', self.initial)
+        self.fields['equipment'].queryset = Equipment.objects.all()
+        self.fields['port_name'].queryset = self.port_queryset()
 
     def port_queryset(self):
-        if self.equipment:
-            return Port.objects.filter(equipment__exact=self.equipment).all()
+        equipment_id = self.initial.get('equipment') or self.data.get('equipment')
+        port_name = self.initial.get('port_name') or self.data.get('port_name')
+        if equipment_id and port_name:
+            return Port.objects.filter(id=port_name).all()
+        if equipment_id:
+            return Port.objects.filter(equipment__exact=equipment_id).filter(communication__isnull=True).filter(connected_to=None).filter(connected_from=None).all()
         else:
-            return Port.objects.all()
+            return Port.objects.none()
 
-    class Meta:
-        model = Port
-        fields = ['equipment', 'port_name']
+    def clean_port_name(self):
+        port_name = self.cleaned_data['port_name']
+        return port_name
+
+    def clean(self):
+        cleaned_data = super().clean()
+        port_name = cleaned_data['port_name']
+        equipment = cleaned_data['equipment']
+        if equipment is None:
+            self.add_error('equipment', 'Error: Equipment is empty.')
+        if port_name is None:
+            self.add_error('port_name', 'Error: Port is empty.')
 
 
 class ManagementForm(forms.Form):
@@ -52,12 +78,16 @@ class ManagementForm(forms.Form):
     Uses for save information between page reloading.
     """
     num_of_forms = forms.IntegerField(widget=HiddenInput)
+    # initial_num = forms.IntegerField(widget=HiddenInput)
 
 
 class CustomFormset:
-    def __init__(self, form_class, request_post, initial_data=None, prefix='form'):
+    def __init__(self, form_class, request_post, initial_data=None, instances=None, prefix='form'):
         self.form_class = form_class
         self.initial_data = initial_data
+        self.instances = instances
+        self.is_bound = None
+        self.is_submit = None
         if initial_data:
             self.num_of_forms = len(max(initial_data.values(), key=len))
             self.request_post = {**request_post, **initial_data}
@@ -82,13 +112,16 @@ class CustomFormset:
         return len(self.forms)
 
     def get_form_fields(self):
-        if 'fields' in self.form_class.__dict__:
-            print("get_form_fields > ", self.form_class.fields)
-            return self.form_class.fields
-        else:
-            fields = self.form_class.__dict__['declared_fields'].keys() or self.form_class.__dict__['base_fields'].keys()
-            print("get_form_fields > ", list(fields))
-            return list(fields)
+        # print('********************************* fields ********************:', self.form_class.__dict__)
+        form_fields = None
+        look_for_fields = ['fields', 'form_fields', 'declared_fields', 'base_fields']
+        for field_name in look_for_fields:
+            if self.form_class.__dict__.get(field_name):
+                form_fields = self.form_class.__dict__.get(field_name)
+                break
+        if form_fields:
+            return form_fields
+        raise AttributeError("'%s' has no declared fields." % self.form_class.__name__)
 
     def get_management_form(self):
         if 'num_of_forms' in self.request_post:
@@ -97,71 +130,78 @@ class CustomFormset:
             return form
         form = ManagementForm(data={
             'num_of_forms': '0',
+            # 'initial_num': str(self.num_of_forms)
         })
         form.full_clean()
         return form
 
     def update_management_form(self):
         return ManagementForm(data={
-            'num_of_forms': self.num_of_forms
+            'num_of_forms': self.num_of_forms,
+            # 'initial_num': self.get_management_form().cleaned_data['initial_num']
         })
 
     def get_num_of_forms(self):
         return self.get_management_form().cleaned_data['num_of_forms']
 
-    def bound_forms(self, delete_index=None):
-        self.forms = [[self.create_form(data=self.get_form_kwargs(index, delete_index=delete_index),
-                                        auto_id=f'id_{index}_%s'), index] for index in range(self.num_of_forms)]
-
-    @staticmethod
-    def update_index(index, insert_index):
-        if insert_index is not None and index >= insert_index:
-            return index + 1
-        return index
-
-    @staticmethod
-    def get_auto_id(index, insert_index=None):
-        if insert_index is not None and index >= insert_index:
-            return f'id_{index + 1}_%s'
-        return f'id_{index}_%s'
-
     def fill_initial(self, delete_index=None, insert_index=None):
-        self.forms = [[self.create_form(initial=self.get_form_kwargs(index, delete_index=delete_index),
-                                        auto_id=f'id_{self.update_index(index, insert_index)}_%s'), index] for index in range(self.num_of_forms)]
+        # print('*********************** fill_initial method ***************************')
+        self.forms = [self.create_form(initial=self.get_form_kwargs(index, delete_index=delete_index),
+                                       auto_id=self.get_auto_id(index, insert_index),
+                                       index=index) for index in range(self.num_of_forms)]
+
+    def bound_forms(self, delete_index=None):
+        self.forms = [self.create_form(data=self.get_form_kwargs(index, delete_index=delete_index),
+                                       auto_id=self.get_auto_id(index),
+                                       index=index) for index in range(self.num_of_forms)]
+        self.is_bound = True
 
     def get_form_kwargs(self, index, delete_index=None):
-        # print('get_from_kwargs > ', self.request_post.getlist('equipment'))
+        # print('********************** get_from_kwargs > ', self.request_post)
+        # print('fields:', self.form_fields)
         if delete_index is not None:
             if index >= delete_index:
                 index += 1
-        if self.initial_data:
-            return {field: self.request_post[field][index] for field in self.initial_data}
         form_kwargs = {}
+        if self.initial_data:
+            # print('get_form_kwargs > initial_data = ', self.initial_data)
+            form_kwargs.update({field_name: self.request_post[field_name][index] for field_name in self.initial_data})
+            return form_kwargs
         for field in self.form_fields:
             field_list = self.request_post.getlist(field)
             if field_list and index < len(field_list):
                 form_kwargs[field] = field_list[index]
+        # print('from_kwargs:', form_kwargs, 'index', index)
         return form_kwargs
 
     def create_forms(self):
         self.management_form = self.update_management_form()
-        return [[self.create_form(self.get_form_kwargs(index=i), auto_id=f'id_{i}_%s'), i] for i in range(self.num_of_forms)]
+        return [self.create_form(initial=self.get_form_kwargs(index=i),
+                                 auto_id=self.get_auto_id(i),
+                                 index=i,
+                                 ) for i in range(self.num_of_forms)]
 
-    def create_form(self, initial=None, data=None, auto_id=None):
-        return self.form_class(initial=initial, data=data, auto_id=auto_id)
+    def create_form(self, initial=None, data=None, auto_id=None, index=None):
+        form = self.form_class(initial=initial,
+                               data=data,
+                               auto_id=auto_id)
+        form.index = index
+        return form
 
     def add_empty_form(self):
-        print("add_empty_form method")
+        # print("************* add_empty_form method **************")
+        # print(self.request_post)
         self.fill_initial()
-        self.forms.append([self.create_form(auto_id=f'id_{self.num_of_forms}_%s'), self.num_of_forms])
+        self.forms.append(self.create_form(auto_id=self.get_auto_id(self.num_of_forms),
+                                           index=self.num_of_forms))
         self.num_of_forms += 1
         self.management_form = self.update_management_form()
 
     def insert_empty_form(self, index):
         self.fill_initial(insert_index=index)
-        for i in self.forms[index:]:
-            i[1] += 1
-        self.forms.insert(index, [self.create_form(auto_id=f'id_{index}_%s'), index])
+        for form in self.forms[index:]:
+            form.index += 1
+        self.forms.insert(index, self.create_form(auto_id=self.get_auto_id(index), index=index))
         self.num_of_forms += 1
         self.management_form = self.update_management_form()
 
@@ -174,23 +214,18 @@ class CustomFormset:
             self.management_form = self.update_management_form()
 
     def cleaned_data(self):
-        for form in self.forms:
-            form[0].full_clean()
         if self.is_valid():
-            return [form[0].cleaned_data for form in self.forms]
-        raise AttributeError(
-                "'%s' object does not pass validation" % self.__class__.__name__
-            )
+            return [form.cleaned_data for form in self.forms]
+        # raise ValidationError("'%s' object does not pass validation" % self.__class__.__name__)
 
     def is_valid(self):
-        return all([form[0].is_valid() for form in self.forms])
+        return all([form.is_valid() for form in self.forms])
+
+    # def has_changed(self):
+    #     return any([form.has_changed() for form in self.forms])
 
     def add_prefix(self, index):
         return "%s-%s" % (self.prefix, index)
-
-    @staticmethod
-    def add_id(self, field, index):
-        return 'id_%s_%s' % (field, index)
 
     def cath_action_with_form(self):
         re_delete = re.compile(r'delete-(\d+)')
@@ -207,10 +242,21 @@ class CustomFormset:
             if result_add:
                 self.insert_empty_form(int(result_add[0]))
         if 'submit' in self.request_post:
-            print('bounding form')
+            # print('bounding form')
             self.bound_forms()
-            # if self.is_valid():
+            # print("catch_action_with_form > forms", self.forms)
+            # print("catch_action_with_form > cleaned data:", self.cleaned_data())
+            # print("catch_action_with_form > forms", self.forms)
+            self.is_submit = True
+            # print('initial_num of forms:', self.management_form['initial_num'])
+
             print('cath_action_with_form > cleaned data: ', self.cleaned_data())
+
+    @staticmethod
+    def get_auto_id(index, insert_index=None):
+        if insert_index is not None and index >= insert_index:
+            return f'id_{index + 1}_%s'
+        return f'id_{index}_%s'
 
 
 class ConnectionFormSet(forms.BaseFormSet):

@@ -12,12 +12,16 @@ urlpatterns = [
     path('communication/<pk>/update', views.CommunicationUpdateView.as_view(), name='communication_update'),
     path('communication/<pk>/delete', views.CommunicationDeleteView.as_view(), name='communication_delete'),
     path('communication/<pk>/connection', views.connection_edit, name='connection_edit'),
+    # path('communication/<pk>/ports', views.communication_ports, name='communication_ports'),
+
     path('consumers/', views.ConsumersListView.as_view(), name='consumers'),
     path('consumer/<pk>', views.ConsumerDetailView.as_view(), name='consumer_detail'),
     path('endpoints/', views.EndPointsListView.as_view(), name='endpoints'),
     path('endpoint/<pk>', views.EndPointDetailView.as_view(), name='endpoint_detail'),
     path('endpoints/<pk>/edit', views.endpoint_edit, name='endpoint_edit'),
     path('connection_form', views.connection_form_view, name='connection_form'),
+    path('communication/<pk>/connections_create', views.connections_create, name='connections_create'),
+    path('communication/<pk>/connections_edit', views.connections_edit, name='connections_edit'),
 
     path('get_ports_for_equipment', views.get_ports, name='get_ports')
 

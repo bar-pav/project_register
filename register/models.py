@@ -43,7 +43,8 @@ class Port(models.Model):
     port_name = models.CharField(max_length=15, blank=True)
     note = models.TextField(null=True, blank=True)
 
-    connected_to = models.OneToOneField('Port', on_delete=models.RESTRICT, related_name='to_port', blank=True, null=True)
+    connected_to = models.OneToOneField('Port', on_delete=models.RESTRICT, related_name='connected_from', blank=True, null=True)
+    communication = models.ForeignKey('Communication', on_delete=models.RESTRICT, null=True, blank=True, related_name='ports')
 
     def __str__(self):
         return f"{self.port_name}"

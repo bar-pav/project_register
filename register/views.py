@@ -1,31 +1,27 @@
-import re
-
 from django.shortcuts import render, get_object_or_404
 from django.views import generic
 from django.urls import reverse, reverse_lazy
-from django.http import HttpResponseRedirect, JsonResponse, HttpResponse
-from django.forms import modelformset_factory
-
+from django.http import HttpResponseRedirect
+# from django.http import JsonResponse, HttpResponse
 
 from .models import Equipment, EndPoint, Consumer, Communication, Connection, Port
-from .forms import forms, EndPointEditForm, ConnectionForm, ConnectionFormSet, CustomFormset
+from .forms import (EndPointEditForm, ConnectionForm, CustomFormset, PortModelForm, ConnectionPointForm)
+# ConnectionFormSet)
+
 # Create your views here.
 
 
 def index(request):
-
-    # Get equipments by their types
+    # This view show equipments by their types.
     equipments = []
     type_choices = Equipment.type_choices
     all_equipments = Equipment.objects.all().count()
     for t in type_choices:
         equipments.append((t[1], Equipment.objects.filter(type__exact=t[0]).count()))
-
     context = {
         'all_equipments': all_equipments,
         'equipments': equipments,
     }
-
     return render(request, 'index.html', context=context)
 
 
@@ -41,7 +37,6 @@ def equipment_list(request):
         'equipments': equipments_by_type,
         'equipments_count': equipments_count,
     }
-
     return render(request, 'equipments.html', context=context)
 
 
@@ -83,29 +78,21 @@ class ConsumerDetailView(generic.DetailView):
 
 def endpoint_edit(request, pk):
     endpoint_inst = get_object_or_404(EndPoint, pk=pk)
-
     # Если данный запрос типа POST, тогда
     if request.method == 'POST':
-
         # Создаём экземпляр формы и заполняем данными из запроса (связывание, binding):
         form = EndPointEditForm(request.POST)
-
         # Проверка валидности данных формы:
         if form.is_valid():
-            # Обработка данных из form.cleaned_data
-            #(здесь мы просто присваиваем их полю due_back)
+            # Обработка данных из form.cleaned_data при успешной валидации
             endpoint_inst.name = form.cleaned_data['endpoint_name']
             endpoint_inst.save()
-            # print('New value applied successfully: ', form.cleaned_data['endpoint_name'])
-
             # Переход по адресу 'all-borrowed':
             return HttpResponseRedirect(reverse('endpoint_detail', args=[str(endpoint_inst.id)]))
-
     # Если это GET (или какой-либо ещё), создать форму по умолчанию.
     else:
         help_msg = f"Enter new name for endpoint {endpoint_inst.name}"
-        form = EndPointEditForm(initial={'endpoint_name': help_msg,})
-
+        form = EndPointEditForm(initial={'endpoint_name': help_msg})
     return render(request, 'register/endpoint_edit.html', {'form': form, 'endpoint_inst': endpoint_inst})
 
 
@@ -129,89 +116,293 @@ class CommunicationDeleteView(generic.edit.DeleteView):
 
 def connection_form_view(request):
     my_formset = CustomFormset(ConnectionForm, request.POST)
-    re_delete = re.compile(r'delete-(\d+)')
-    re_add = re.compile(r'add-(\d+)')
-
-    # print('+' * 50)
-    # print(connection_formset)
-    if request.method == 'POST':
-        if 'add_field' in request.POST:
-            print('ADD matches')
-            my_formset.add_empty_form()
-            # print(my_formset[0])
-        if 'delete_last' in request.POST:
-            my_formset.delete_form()
-            print('DELETE matches')
-        for field in request.POST:
-            result_delete = re_delete.findall(field)
-            result_add = re_add.findall(field)
-            if result_delete:
-                my_formset.delete_form(index=int(result_delete[0]))
-            if result_add:
-                my_formset.insert_empty_form(int(result_add[0]))
-        if 'submit' in request.POST:
-            my_formset.bound_forms()
-    # print('=' * 50)
-    # print(my_formset)
-
+    my_formset.cath_action_with_form()
     context = {
         'formset': my_formset,
         'num_forms': len(my_formset)
     }
-    return render(request, 'connection_form.html', context=context)
+    return render(request, 'connection_edit.html', context=context)
 
 
-from .forms import PortModelForm, ConnectionPointForm
+# def get_port_set_for_communication(communication_instance):
+#     connection_points = Connection.objects.filter(communication__exact=communication_instance).all()
+#     # Первой добавляем запись, соответствующую полю station в модели.
+#     connection_ports = [connection_points[0].station]
+#     # Для остальных добавляем значения только поля line в модели.
+#     connection_ports.extend((point.line for point in connection_points))
+#     # print('CONNECTION PORTS-------------------------: ', connection_ports)
+#     return connection_ports
 
 
-def connection_edit(request, pk):
-    communication = Communication.objects.get(pk=pk)
-    connection_points = Connection.objects.filter(communication__exact=communication).all()
-    initial_data = {'equipment': [], 'port_name': []}
+def get_port_set_for_communication(communication_instance):
+    connection_ports = Port.objects.filter(communication__exact=communication_instance).all()
+    if connection_ports:
+        # Сначала добавляем первый порт, а затем все порты, которые связаны отношением connected_to.
+        ports = [connection_ports[0]]
+        ports.extend([port.connected_to for port in connection_ports])
+        print('connection_ports:', connection_ports)
+        return ports
 
-    if len(connection_points) > 1:
-        print('connection_point:', connection_points[0].station.equipment, connection_points[0].station)
-        initial_data['equipment'].append(connection_points[0].station.equipment)
-        initial_data['port_name'].append(connection_points[0].station)
-        for point in connection_points:
-            print('connection_point:', point.line.equipment, point.line)
-            initial_data['equipment'].append(point.line.equipment)
-            initial_data['port_name'].append(point.line)
-    else:
-        print('connection_point:', connection_points[0].station.equipment, connection_points[0].station)
-        initial_data['equipment'].append(connection_points[0].station.equipment)
-        initial_data['port_name'].append(connection_points[0].station)
 
-        print('connection_point:', connection_points[0].line.equipment, connection_points[0].line)
-        initial_data['equipment'].append(connection_points[0].line.equipment)
-        initial_data['port_name'].append(connection_points[0].line)
+def release_ports_for_communication(communication):
+    ports = Port.objects.filter(communication=communication).all()
+    print('ports for communication', communication, ports)
+    for port in ports:
+        port.communication = None
+        port.connected_to = None
+        port.save()
+    # ports = Port.objects.filter(communication=communication).all()
+    # if ports:
+    #     return False
+    # return True
+
+# def communication_ports(request, pk):
+#     communication = Communication.objects.get(pk=pk)  # Получение записи, для которой выводится список коннекций.
+#     if request.method == "GET":
+#         my_formset = CustomFormset(PortModelForm,
+#                                    request.POST,
+#                                    # initial_data={'equipment': [port.equipment.id for port in connection_ports],
+#                                    #               'port_name': [port.id for port in connection_ports]},
+#                                    )
+#         # ports = initial_data['port_name']
+#         # forms_port = []
+#         # for i in ports:
+#         #     forms_port.append(PMF(instance=i))
+#     if request.method == 'POST':
+#         my_formset = CustomFormset(PortModelForm, request.POST)
+#         my_formset.cath_action_with_form()
+#         # print("connection_edit > POST catch action.", my_formset)
+#         if my_formset.is_submit:
+#             print('cleaned: ', my_formset.cleaned_data())
+#             initial_data = get_port_set_for_communication_new(communication)
+#             new_data = []
+#             for form_data in my_formset.cleaned_data():
+#                 new_data.append(form_data['port_name'])
+#             #
+#             # print(initial_data)
+#             print(new_data)
+#             if len(initial_data) != len(new_data):
+#                 print('Is changed. Length not equal.')
+#             print('has changed:', initial_data != new_data)
+#             # print('has_changed: ', my_formset.has_changed())
+#             if len(initial_data) == 0:
+#                 if len(new_data) < 2:
+#                     print('Connection must include at least 2 elements.')
+#                 else:
+#                     for ind, port in enumerate(new_data[:-1]):
+#                         port.connected_to = new_data[ind + 1]
+#                         port.communication = communication
+#                         port.save()
+    #
+    # context = {
+    #     'communication': communication,
+    #     'formset': my_formset,
+    #     'num_forms': len(my_formset),
+    #     # 'ports': forms_port,
+    # }
+    # return render(request, 'communication_ports.html', context=context)
+
+
+def connections_create(request, pk):
+    """ This view is render set of forms, each of that corresponds to one port from connection set in Connection model.
+            _______________________________________________________________________________
+            station                    | line                      | communication
+            -------------------------------------------------------------------------------
+            port_instance_source      | port_instance_through_1    | communication_instance
+            port_instance_through_1   | port_instance_through_2    | communication_instance
+            port_instance_through_2   | port_instance_destination  | communication_instance
+            -------------------------------------------------------------------------------
+
+            Connection sequence looks like:
+                port_instance_source > port_instance_through_1 > port_instance_through_2 > port_instance_destination
+            It has 4 connection ports.
+            Form set implemented as 'CustomFormset'.
+            One Port form is instance of 'PortModelForm'.
+        """
+    communication = Communication.objects.get(pk=pk)  # Получение записи, для которой выводится список коннекций.
+    my_formset = None
     if request.method == "GET":
-        my_formset = CustomFormset(PortModelForm, request.POST, initial_data=initial_data)
+        my_formset = CustomFormset(PortModelForm, request.POST)
     if request.method == 'POST':
-        my_formset = CustomFormset(ConnectionPointForm, request.POST)
+        my_formset = CustomFormset(PortModelForm, request.POST)
         my_formset.cath_action_with_form()
+        if my_formset.is_submit:
+            if my_formset.is_valid():
+                # print('cleaned: ', my_formset.cleaned_data())
+                communication_ports = get_port_set_for_communication(communication)
+                new_data = []
+                for form_data in my_formset.cleaned_data():
+                    new_data.append(form_data['port_name'])
+                print(new_data)
+                if not communication_ports:  # Means there is no records for this communication in DB. Create new communication.
+                    # if len(communication_ports) != len(new_data):
+                    #     print('Is changed. Length not equal.')
+                    # print('has changed:', communication_ports != new_data)
+                    # # print('has_changed: ', my_formset.has_changed())
+                    if len(new_data) < 2:
+                        print('Connection must include at least 2 elements.')
+                    else:
+                        for ind, port in enumerate(new_data[:-1]):
+                            port.connected_to = new_data[ind + 1]
+                            port.communication = communication
+                            port.save()
+                else:
+                    raise ValueError("Communication '%s' already has initial data." % communication)
+
     context = {
         'communication': communication,
         'formset': my_formset,
         'num_forms': len(my_formset),
+        # 'ports': forms_port,
+    }
+    return render(request, 'communication_ports.html', context=context)
+
+
+def connections_edit(request, pk):
+    """ This view is render set of forms, each of that corresponds to one port from connection set in Connection model.
+            _______________________________________________________________________________
+            station                    | line                      | communication
+            -------------------------------------------------------------------------------
+            port_instance_source      | port_instance_through_1    | communication_instance
+            port_instance_through_1   | port_instance_through_2    | communication_instance
+            port_instance_through_2   | port_instance_destination  | communication_instance
+            -------------------------------------------------------------------------------
+
+            Connection sequence looks like:
+                port_instance_source > port_instance_through_1 > port_instance_through_2 > port_instance_destination
+            It has 4 connection ports.
+            Form set implemented as 'CustomFormset'.
+            One Port form is instance of 'PortModelForm'.
+        """
+    communication = Communication.objects.get(pk=pk)  # Получение записи, для которой выводится список коннекций.
+    connection_ports = get_port_set_for_communication(communication)
+    my_formset = None
+    if request.method == "GET":
+        my_formset = CustomFormset(PortModelForm,
+                                   request.POST,
+                                   initial_data={'equipment': [port.equipment.id for port in connection_ports],
+                                                 'port_name': [port.id for port in connection_ports]},
+                                   )
+        # ports = initial_data['port_name']
+        # forms_port = []
+        # for i in ports:
+        #     forms_port.append(PMF(instance=i))
+    if request.method == 'POST':
+        my_formset = CustomFormset(PortModelForm, request.POST)
+        my_formset.cath_action_with_form()
+        # print("connection_edit > POST catch action.", my_formset)
+        if my_formset.is_submit:
+            if my_formset.is_valid():
+                print('cleaned: ', my_formset.cleaned_data())
+                initial_data = get_port_set_for_communication(communication)
+                new_data = []
+                for form_data in my_formset.cleaned_data():
+                    new_data.append(form_data['port_name'])
+                # print(initial_data)
+                print(new_data)
+                release_ports_for_communication(communication)
+                # if len(initial_data) != len(new_data):
+                #     print('Is changed. Length not equal.')
+                #     print('has changed:', initial_data != new_data)
+                # else:
+                #     print('Length is matched: ', initial_data, new_data)
+                if len(new_data) < 2:
+                    print('Connection must include at least 2 elements.')
+                else:
+                    for ind, port in enumerate(new_data[:-1]):
+                        port.connected_to = new_data[ind + 1]
+                        port.communication = communication
+                        port.save()
+
+    context = {
+        'communication': communication,
+        'formset': my_formset,
+        'num_forms': len(my_formset),
+        # 'ports': forms_port,
+    }
+    return render(request, 'communication_ports.html', context=context)
+
+
+# ------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
+def connection_edit(request, pk):
+    """ This view is render set of forms, each of that corresponds to one port from connection set in Connection model.
+        _______________________________________________________________________________
+        station                    | line                      | communication
+        -------------------------------------------------------------------------------
+        port_instance_source      | port_instance_through_1    | communication_instance
+        port_instance_through_1   | port_instance_through_2    | communication_instance
+        port_instance_through_2   | port_instance_destination  | communication_instance
+        -------------------------------------------------------------------------------
+
+        Connection sequence looks like:
+            port_instance_source > port_instance_through_1 > port_instance_through_2 > port_instance_destination
+        It has 4 connection ports.
+        Form set implemented as 'CustomFormset'.
+        One Port form is instance of 'PortModelForm'.
+    """
+    communication = Communication.objects.get(pk=pk)  # Получение записи, для которой выводится список коннекций.
+    connection_ports = get_port_set_for_communication(communication)
+    my_formset = None
+    if request.method == "GET":
+        my_formset = CustomFormset(PortModelForm,
+                                   request.POST,
+                                   initial_data={'equipment': [port.equipment.id for port in connection_ports],
+                                                 'port_name': [port.id for port in connection_ports]},
+                                   )
+        # ports = initial_data['port_name']
+        # forms_port = []
+        # for i in ports:
+        #     forms_port.append(PMF(instance=i))
+    if request.method == 'POST':
+        my_formset = CustomFormset(PortModelForm, request.POST)
+        my_formset.cath_action_with_form()
+        # print("connection_edit > POST catch action.", my_formset)
+        if my_formset.is_submit:
+            print('cleaned: ', my_formset.cleaned_data())
+            initial_data = get_port_set_for_communication(communication)
+            new_data = []
+            for form_data in my_formset.cleaned_data():
+                new_data.append(form_data['port_name'])
+
+            print(initial_data)
+            print(new_data)
+            if len(initial_data) != len(new_data):
+                print('Is changed. Length not equal.')
+            print('has changed:', initial_data != new_data)
+            # print('has_changed: ', my_formset.has_changed())
+
+    context = {
+        'communication': communication,
+        'formset': my_formset,
+        'num_forms': len(my_formset),
+        # 'ports': forms_port,
     }
     return render(request, 'connection_edit.html', context=context)
 
 
 def get_ports(request):
-    if request.method == 'GET' and request.GET.get('equipment'):
-        equipment = Equipment.objects.get(pk=int(request.GET.get('equipment')))
-        field_id = request.GET.get('id').split('_')[1]
+    field_id = request.GET.get('id').split('_')[1]
+    print('get_ports > request:', request)
+    if request.method == 'GET':
+        if request.GET.get('equipment') == '':
+            equipment = ''
+        else:
+            equipment = Equipment.objects.get(pk=int(request.GET.get('equipment')))
         form = PortModelForm(initial={'equipment': equipment},
-                             equipment=equipment,
+                             # equipment=equipment,
                              auto_id=CustomFormset.get_auto_id(field_id))
-        print(form)
         context = {
             'form': [form, field_id]
         }
         return render(request, 'connection_edit_ajax_response.html', context=context)
-
-    else:
-        print('NO EQUIPMENT')
-    print('get_ports >')
-    print(request)
+    # else:
+    #     print('get_ports > request > equipment:', request.GET.get('equipment'))
+    #
+    #     form = PortModelForm(initial={'equipment': None},
+    #                          auto_id=CustomFormset.get_auto_id(field_id))
+    #     print('NO EQUIPMENT')
+    #     context = {
+    #         'form': [form, field_id]
+    #     }
+    #     return render(request, 'connection_edit_ajax_response.html', context=context)

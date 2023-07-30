@@ -5,19 +5,22 @@
  <h1>Communication Detail</h1>
     {% if communication %}
         {{ communication.name }} ({{ communication.consumer }})
-        {% if communication.connection.all %}
-            <p></p>
-            <p>Connection points: <a href="{% url 'connection_edit' communication.pk %}">Edit</a></p>
-            <ul>
-            {% for connection in communication.connection.all %}
-                <li>{{ connection.station }} -- {{ connection.line }}
-<!--                    {% if not forloop.last %} &ndash;&gt; {% endif %}-->
-                </li>
-            {% endfor %}
-            </ul>
-        {% endif %}
+
+        {% if communication.ports.all %}
+                <p>Connected ports. <a href="{% url 'connections_edit' communication.pk %}">Edit connections</a></p>
+                <ul>
+                    {% for port in communication.ports.all %}
+                        <li>[{{ port.equipment }}] {{ port }}  - {{ port.connected_to }} [{{ port.connected_to.equipment }}]</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                    <p><a href="{% url 'connections_create' communication.pk %}">Add connections</a></p>
+            {% endif %}
     {% else %}
         <p>There are no communication detail</p>
+
+
+
     {% endif %}
 
 {% endblock %}
