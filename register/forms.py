@@ -3,8 +3,8 @@ import re
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms.widgets import HiddenInput
-from .models import Connection, Port, Equipment
-from django.forms import formset_factory
+from .models import Connection, Port, Equipment, Communication, EndPoint, Consumer
+from django.forms import formset_factory, inlineformset_factory
 
 
 class ConnectionPointForm(forms.Form):
@@ -12,6 +12,77 @@ class ConnectionPointForm(forms.Form):
     port_name = forms.ModelChoiceField(queryset=Port.objects.all(), required=False)
 
     fields = ['equipment', 'port_name']
+
+    # def __init__(self, *args, **kwargs):
+    #     super(ConnectionPointForm, self).__init__(*args, **kwargs)
+    #
+    #     self.fields['equipment']
+
+
+class EquipmentForm(forms.ModelForm):
+    class Meta:
+        model = Equipment
+        fields = '__all__'
+        exclude = ['note']
+        widgets = {'note': forms.Textarea(attrs={"cols": 50, "rows": 3})}
+        labels = {'name': 'Название',
+                  'endpoint': 'ИП',
+                  'location': 'Расположено',
+                  'type': 'Тип',
+                  }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['name'].widget.attrs.update({'class': 'form-control'})
+        self.fields['endpoint'].widget.attrs['class'] = 'form-control'
+        self.fields['location'].widget.attrs.update({'class': 'form-control'})
+        self.fields['type'].widget.attrs['class'] = 'form-control'
+
+
+
+class PortForm(forms.ModelForm):
+    class Meta:
+        model = Port
+        fields = ['port_name', 'interface_type', 'media_type', 'note']
+
+
+class CreatePortForm(PortForm):
+    class Meta(PortForm.Meta):
+        exclude = ['note']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['port_name'].widget.attrs['autocomplete'] = 'off'
+        self.fields['port_name'].widget.attrs['class'] = 'form-control'
+        self.fields['interface_type'].widget.attrs['class'] = 'form-control'
+        self.fields['media_type'].widget.attrs['class'] = 'form-control'
+        print()
+
+
+class PortDetailForm(forms.Form):
+    # porn_name = forms.CharField(max_length=20)
+
+    def __init__(self, instance, *args, **kwargs):
+        self.instance = instance
+        super(PortDetailForm, self).__init__(*args, **kwargs)
+
+
+class PortBaseFormSet(forms.BaseFormSet):
+
+    def get_form_kwargs(self, index):
+        form_kwargs = super(PortBaseFormSet, self).get_form_kwargs(index)
+        try:
+            port_instance = form_kwargs['instances'].all()[index]
+        except IndexError:
+            print('Index out of range.')
+        return {'instance': port_instance}
+
+
+PortInlineFormsetFactory = inlineformset_factory(Equipment, Port, form=CreatePortForm, extra=0, can_delete=True, can_delete_extra=False)
+
+
+def port_formset_factory(extra=None):
+    return formset_factory(PortDetailForm, formset=PortBaseFormSet, can_delete=True, extra=extra)
 
 
 class EndPointEditForm(forms.Form):
@@ -26,6 +97,18 @@ class EndPointEditForm(forms.Form):
         return name
 
 
+class EndPointModelForm(forms.ModelForm):
+    class Meta:
+        model = EndPoint
+        fields = '__all__'
+
+
+class ConsumerModelForm(forms.ModelForm):
+    class Meta:
+        model = Consumer
+        fields = '__all__'
+
+
 class ConnectionForm(forms.Form):
     connection_point = forms.CharField(max_length=100, help_text='max 100 symbols', required=False)
     # connection_point
@@ -35,9 +118,9 @@ class ConnectionForm(forms.Form):
 class PortModelForm(forms.Form):
     equipment = forms.ModelChoiceField(queryset=None, required=False)
     port_name = forms.ModelChoiceField(queryset=Port.objects.all(), required=False, validators=[])
-    description = forms.CharField(required=False)
+    # description = forms.CharField(required=False)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, reserved_ports=None, *args, **kwargs):
         super(PortModelForm, self).__init__(*args, **kwargs)
         # if self.data:
         #     self.data['port_name'] = Port.objects.get(pk=int(self.data['port_name'])).port_name
@@ -46,12 +129,23 @@ class PortModelForm(forms.Form):
         # print('---------------------------->', Port.objects.filter(equipment__exact=self.equipment))
         # print('equipment: ', type(equipment), equipment)
         print('initial', self.initial)
+        self.reserved_ports = reserved_ports
+        print('reserved ports', self.reserved_ports)
         self.fields['equipment'].queryset = Equipment.objects.all()
         self.fields['port_name'].queryset = self.port_queryset()
+
+        self.fields['equipment'].widget.attrs['class'] = 'form-control'
+        self.fields['port_name'].widget.attrs['class'] = 'form-control'
+
+        print('FIELDS:', self.fields['equipment'].__dict__)
+
 
     def port_queryset(self):
         equipment_id = self.initial.get('equipment') or self.data.get('equipment')
         port_name = self.initial.get('port_name') or self.data.get('port_name')
+        exclude_ports = self.reserved_ports
+        # print('exclude_ports', exclude_ports)
+        print('------______----____---___:', port_name)
         if equipment_id and port_name:
             return Port.objects.filter(id=port_name).all()
         if equipment_id:
@@ -71,6 +165,59 @@ class PortModelForm(forms.Form):
             self.add_error('equipment', 'Error: Equipment is empty.')
         if port_name is None:
             self.add_error('port_name', 'Error: Port is empty.')
+
+
+# New connection point form TODO
+class ConnectionPortForm(forms.Form):
+    endpoint = forms.ModelChoiceField(queryset=None, required=False)
+    equipment_type = forms.ModelChoiceField(queryset=None, required=False)
+    equipment = forms.ModelChoiceField(queryset=None, required=False)
+    port_name = forms.ModelChoiceField(queryset=None, required=False)
+
+    def __init__(self, reserved_ports=None, *args, **kwargs):
+        super(ConnectionPortForm, self).__init__(*args, **kwargs)
+        print('initial', self.initial)
+        self.reserved_ports = reserved_ports
+        print('reserved ports', self.reserved_ports)
+        self.fields['endpoint'].queryset = EndPoint.objects.all()
+        self.fields['equipment_type'].queryset = self.get_queryset(Equipment, 'type')
+        self.fields['equipment'].queryset = self.get_queryset(Equipment, 'equipment')
+        self.fields['port_name'].queryset = self.get_queryset(Port, 'port_name')
+
+        # self.fields['equipment'].widget.attrs['class'] = 'form-control'
+        # self.fields['port_name'].widget.attrs['class'] = 'form-control'
+
+        print('FIELDS:', self.fields['equipment'].__dict__)
+
+    def get_queryset(self, model, field):
+        equipment_id = self.initial.get('equipment') or self.data.get('equipment')
+        port_name = self.initial.get('port_name') or self.data.get('port_name')
+        exclude_ports = self.reserved_ports
+        # print('exclude_ports', exclude_ports)
+        print('------______----____---___:', port_name)
+        if equipment_id and port_name:
+            return Port.objects.filter(id=port_name).all()
+        if equipment_id:
+            return Port.objects.filter(equipment__exact=equipment_id).filter(communication__isnull=True).filter(
+                connected_to=None).filter(connected_from=None).all()
+        else:
+            return Port.objects.none()
+
+    def clean_port_name(self):
+        port_name = self.cleaned_data['port_name']
+        return port_name
+
+    def clean(self):
+        cleaned_data = super().clean()
+        port_name = cleaned_data['port_name']
+        equipment = cleaned_data['equipment']
+        if equipment is None:
+            self.add_error('equipment', 'Error: Equipment is empty.')
+        if port_name is None:
+            self.add_error('port_name', 'Error: Port is empty.')
+
+
+
 
 
 class ManagementForm(forms.Form):

@@ -1,0 +1,127 @@
+{% extends 'base_generic.html' %}
+
+{% block content %}
+
+<h3>Добавить новое оборудование</h3>
+
+<form id="myForm" method="post">
+    {% csrf_token %}
+
+    {% if equipment_form %}
+        <div class="form-group">
+            <input type="text" name="name" id="id_name" class="form-control {% if equipment_form.name.errors %}is-invalid{% endif %}" placeholder="{{ equipment_form.name.label }}" value="{% if equipment_form.name.value %}{{ equipment_form.name.value }}{% endif %}">
+                {% if equipment_form.name.errors %}
+                    <div class="invalid-feedback">
+                        {{ equipment_form.name.errors }}
+                    </div>
+                {% endif %}
+        </div>
+        <div class="form-group">
+            <label class="">{{ equipment_form.type.label }}</label>
+            {{ equipment_form.type }}
+        </div>
+        <div class="form-group">
+            <label class="">{{ equipment_form.endpoint.label }}</label>
+            {{ equipment_form.endpoint }}
+                {% if equipment_form.endpoint.errors %}
+                    <div class="invalid-feedback">
+                        {{ equipment_form.endpoint.errors }}
+                    </div>
+                {% endif %}
+        </div>
+        <div class="form-group">
+            <input type="text" name="location" id="id_location" class="form-control {% if equipment_form.location.errors %}is-invalid{% endif %}" placeholder="{{ equipment_form.location.label }}" value="{% if equipment_form.location.value %}{{ equipment_form.location.value }}{% endif %}">
+                {% if equipment_form.location.errors %}
+                    <div class="invalid-feedback">
+                        {{ equipment_form.location.errors }}
+                    </div>
+                {% endif %}
+        </div>
+
+    {% endif %}
+
+
+    <h4>Добавить порты</h4>
+
+    <div class="px-5">
+        <div class="card">
+                <div class="card card-body">
+                    <div class="form-group px-5">
+                            <table class="table">
+                                <thead>
+                                    <th>Port name</th>
+                                    <th>Type</th>
+                                    <th>Media type</th>
+                                    <th></th>
+                                </thead>
+                                <tbody id="port-fields">
+                                        {% for port in ports %}
+                                        <tr>
+                                            {{ port }}
+                                        </tr>
+                                        {% endfor %}
+                                </tbody>
+                            </table>
+                    </div>
+                </div>
+        </div>
+    </div>
+
+
+
+
+<!--                                    <div id="port-fields">-->
+<!--                                            {% for port in ports %}-->
+<!--                                            {{ port }}-->
+<!--                                        {% endfor %}-->
+<!--                                    </div>-->
+
+
+                                        <a href="#" id="add-port-button" class="btn btn-secondary add-ports">Add More</a>
+
+
+
+    {{ ports.management_form }}
+    <input type="submit" value="Submit" />
+
+</form>
+
+<script type="text/html" id="port_template">
+    <div id="id_{{ port_formset.prefix }}-__prefix__">
+        {{ ports.empty_form }} <button type="button" class="btn remove">remove</button>
+    </div>
+</script>
+
+<script>
+    $(document).ready(function() {
+      $('.add-ports').click(function(ev) {
+          ev.preventDefault();
+          var count = $('#port-fields').children().length;
+          var tmplMarkup = $('#port_template').html();
+          var compiledTmpl = tmplMarkup.replace(/__prefix__/g, count);
+          $('#port-fields').append(compiledTmpl);
+          $('#port-fields button[class*=remove]:last').click(addRemoveEventToBtn);
+
+<!--          addRemoveEventToBtn()-->
+          // update form count
+          $('#id_ports-TOTAL_FORMS').attr('value', count + 1);
+      });
+
+      $("button.remove").each(addRemoveEventToBtn);
+
+      function addRemoveEventToBtn(btn) {
+        $(this)[0].parentNode.remove();
+        var count = $('#port-fields').children().length;
+        // update form count
+        $('#id_ports-TOTAL_FORMS').attr('value', count - 1);
+      }
+});
+</script>
+
+<!--<script type="text/javascript">-->
+<!--    $(function() {-->
+<!--        $('#myForm div p').formset();-->
+<!--    })-->
+<!--</script>-->
+
+{% endblock %}

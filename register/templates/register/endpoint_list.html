@@ -5,17 +5,114 @@
  <h1>Endpoints list</h1>
 
     {% if endpoint_list %}
-    <ul>
+<table>
+    <thead>
+    </thead>
+    <tbody>
+    {% for endpoint in endpoint_list %}
+        <tr>
+            <td data-endpoint_id="{{ endpoint.id }}">{{ endpoint.name }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
 
-      {% for endpoint in endpoint_list %}
-      <li>
-        <a href="{{ endpoint.get_absolute_url }}">{{ endpoint.name }}</a> 
-      </li>
-      {% endfor %}
 
-    </ul>
-    {% else %}
-      <p>There are no communications.</p>
-    {% endif %}
+
+<!--    <ul>-->
+
+<!--      {% for endpoint in endpoint_list %}-->
+<!--      <li>-->
+<!--        <a href="{{ endpoint.get_absolute_url }}">{{ endpoint.name }}</a> -->
+<!--      </li>-->
+<!--      {% endfor %}-->
+
+<!--    </ul>-->
+<!--    {% else %}-->
+<!--      <p>There are no communications.</p>-->
+<!--    {% endif %}-->
+
+<a href="{% url 'endpoint_create' %}" class >Add</a>
+
+
+
+
+
+<script>
+    $(document).ready(
+        function(){
+//            $('#show-side-btn').on('click', function(e){
+//            $('.side').show();
+              $('td').on('click', function(e){
+                  console.log($(this))
+                  if($(this).hasClass('active')) {
+                    $(this).removeClass('active')
+                    replaceClass($('.side'), 'side-show', 'side-hide')
+                    $('.side').html('')
+
+                  }
+                  else {
+                    $('.active').each(function(){$(this).removeClass('active')})
+                    $(this).addClass('active')
+
+
+
+                    $.ajax({
+                    data: {
+                            'endpoint_id': $(this).data('endpoint_id'),
+                            },                                              // получаем данные формы
+                    url: "{% url 'get_endpoint_detail' %}",
+                    context: e.delegateTarget,                              // контекст - объект, к которому будет привязан ответ
+                    // если успешно, то
+                    success: function (response) {
+                           console.log(response)
+                           // console.log('this = ', $(this))
+
+                        if (response) {
+                                                replaceClass($('.side'), 'side-hide', 'side-show')
+
+                            console.log($(this))
+                            // $(this).parent("tr").after(response);
+                            // $(this).closest("tr").after(response)
+                            $('.side').html(response)
+                            // $('#portEditModal').modal('show')
+                            // attach_modal_event()
+                        }
+                        else {
+
+                        }
+                    },
+                    // если ошибка, то
+                    error: function (response) {
+                        // предупредим об ошибке
+                        console.log(response.responseJSON.errors)
+                    }
+                });
+
+
+
+
+                  }
+                  })
+
+
+
+
+
+            })
+
+
+    function replaceClass(element, oldClass, newClass) {
+        if (element.hasClass(oldClass)) {
+            element.removeClass(oldClass);
+        }
+        element.addClass(newClass);
+    }
+
+
+
+
+</script>
+
 
 {% endblock %}

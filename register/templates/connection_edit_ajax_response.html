@@ -1,2 +1,13 @@
-<div><input type="submit" name="add-{{ form.1 }}" value="insert field {{ form.1 }}"></div>
-<div>{{ form.0 }}<input type="submit" name="delete-{{ form.1 }}" value="delete field {{ form.1 }}"></div>
+{% for field in form.0 %}
+ <div class="col">
+    <div class="input-group">
+        <div class="input-group-prepend">
+            <span class="input-group-text">{{ field.label }}</span>
+        </div>
+    {{ field }}
+    </div>
+</div>
+{% endfor %}
+ <div class="col">
+    <input type="submit" class="btn btn-danger col-auto my-1" name="delete-{{ form.1 }}" value="delete field {{ form.1 }}">
+</div>

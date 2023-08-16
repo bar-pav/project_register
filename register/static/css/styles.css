@@ -8,3 +8,55 @@ span.logo {
     font-size: 1.9em;
     color: green;
 }
+
+.add-button {
+    background-color: white; /* Green */
+    border: 2px solid #4CAF50;
+    border-radius: 50%;
+    color: #4CAF50;
+    padding: 0px 10px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 20px;
+    text-color: #4CAF50;
+    opacity: 0.6;
+}
+
+.add-button:hover {
+    background-color: white; /* Green */
+    border: 2px solid #4CAF50;
+    border-radius: 50%;
+    color: #4CAF50;
+    padding: 0px 10px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 20px;
+    text-color: #4CAF50;
+    opacity: 1;
+}
+
+
+#delete_block {
+    position: fixed; /* Фиксированное положение */
+    right: 15%; /* Расстояние от правого края окна браузера */
+    top: 95%; /* Расстояние сверху */
+}
+
+.side {
+    position: fixed;
+    right: 0px;
+    left: 50%;
+    height: 100%;
+    background: #fc0;
+    padding: 20px
+}
+
+.side-show {
+    display: block;
+}
+
+.side-hide {
+    display: none;
+}

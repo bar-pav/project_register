@@ -1,0 +1,6 @@
+<form id="modal-form">{% csrf_token %}
+    {{ edit_port_form.as_table }}
+    Instance
+    {{ edit_port_form.instance }}
+    <input id="id_update-port_id" value="{{ edit_port_form.instance.id }}" hidden>
+</form>

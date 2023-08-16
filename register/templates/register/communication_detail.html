@@ -7,14 +7,18 @@
         {{ communication.name }} ({{ communication.consumer }})
 
         {% if communication.ports.all %}
-                <p>Connected ports. <a href="{% url 'connections_edit' communication.pk %}">Edit connections</a></p>
+            <p>Connected ports.
                 <ul>
                     {% for port in communication.ports.all %}
-                        <li>[{{ port.equipment }}] {{ port }}  - {{ port.connected_to }} [{{ port.connected_to.equipment }}]</li>
+                       {% if forloop.first %} [{{ port.equipment }}] {{ port }} - [{{ port.connected_to.equipment }}] {{ port.connected_to }} {% else %} - [{{ port.connected_to.equipment }}] {{ port.connected_to }} {% endif %}
                     {% endfor %}
+                     <a href="{% url 'connections_edit' communication.pk %}" class="btn btn-info">Edit connections</a></p>
                 </ul>
+
+                <p><a href="{% url 'connections_delete' communication.pk %}" class="btn btn-danger">Delete connections</a></p>
+
             {% else %}
-                    <p><a href="{% url 'connections_create' communication.pk %}">Add connections</a></p>
+                    <p><a href="{% url 'connections_create' communication.pk %}" class="btn btn-success">Add connections</a></p>
             {% endif %}
     {% else %}
         <p>There are no communication detail</p>

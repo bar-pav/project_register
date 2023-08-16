@@ -13,13 +13,20 @@ class Equipment(models.Model):
         ('-', 'other')
     ]
 
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
+    endpoint = models.ForeignKey('EndPoint', on_delete=models.RESTRICT, default=None, null=True, related_name='equipments')
     location = models.CharField(max_length=30)
     note = models.TextField(null=True, blank=True)
     type = models.CharField(max_length=1, choices=type_choices, default='-')
 
+    def get_absolute_url(self):
+        return reverse('equipment_detail', args=[str(self.id)])
+
     def __str__(self):
         return f"{self.name}"
+
+    class Meta:
+        unique_together = ('name', 'endpoint',)
 
 
 class InterfaceType(models.Model):
@@ -37,10 +44,10 @@ class Port(models.Model):
         ('V', 'virtual')
     ]
 
-    equipment = models.ForeignKey('Equipment', on_delete=models.RESTRICT, related_name='ports', blank=True)
+    equipment = models.ForeignKey('Equipment', on_delete=models.CASCADE, related_name='ports', blank=True)
     interface_type = models.ForeignKey('InterfaceType', on_delete=models.RESTRICT, related_name='ports')
     media_type = models.CharField(max_length=1, choices=media_type_choices, default='E')
-    port_name = models.CharField(max_length=15, blank=True)
+    port_name = models.CharField(max_length=30, blank=True)
     note = models.TextField(null=True, blank=True)
 
     connected_to = models.OneToOneField('Port', on_delete=models.RESTRICT, related_name='connected_from', blank=True, null=True)
@@ -48,6 +55,9 @@ class Port(models.Model):
 
     def __str__(self):
         return f"{self.port_name}"
+
+    class Meta:
+        unique_together = ('port_name', 'equipment',)
 
 
 class EndPoint(models.Model):
@@ -60,6 +70,9 @@ class EndPoint(models.Model):
 
     def __str__(self):
         return f"{self.name}"
+
+    class Meta:
+        unique_together = ('name', 'code',)
 
 
 class Consumer(models.Model):

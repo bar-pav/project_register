@@ -29,6 +29,7 @@ from django.views.generic import RedirectView
 
 urlpatterns += [
     path('register/', include('register.urls')),
+    path('sendmail/', include('sendmail.urls')),
     path('', RedirectView.as_view(url='/register/', permanent=True)),
 ]
 

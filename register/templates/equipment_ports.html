@@ -1,0 +1,348 @@
+{% extends "base_generic.html" %}
+
+
+{% block content %}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'equipments' %}">Оборудование</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'equipment_detail' equipment.id %}">{{ equipment.name }}</a></li>
+            <li class="breadcrumb-item active">Порты</li>
+        </ol>
+    </nav>
+
+    <div id="equipment_info" class="px-5">
+        <h2 class="">{{ equipment.name }}</h2>
+    </div>
+
+
+<div class="px-5">
+    <div class="card">
+        <div class="card-header" id="headingOne">
+            <button class="btn btn-link" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                <h5 class="mb-0">Добавить порт</h5>
+            </button>
+        </div>
+        <div id="collapseOne" class="collapse hide" aria-labelledby="headingOne" data-parent="#accordion">
+            <div class="card card-body">
+                <div class="form-group px-5">
+                    <form id="addForm" action="{% url 'add_port' equipment.id %}" method="post">
+                        {% csrf_token %}
+                        <table class="table">
+                            <thead>
+                                <th>Port name</th>
+                                <th>Type</th>
+                                <th>Media type</th>
+                                <th></th>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    {% for field in create_port_form %}
+                                        <td>{{ field }}</td>
+                                    {% endfor %}
+                                    <td>
+                                        <input type="submit" class="btn btn-secondary" value="Create">
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <small id="" class="text-muted px-5">
+                            For creating range, use {1-n}. Ex.: board{1-2}port{1-21}
+                        </small>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    <div class="px-5 pt-4">
+        <h3><span>Порты</span></h3>
+    </div>
+
+    <form method="POST">{% csrf_token %}
+
+    <table class="table table-striped">
+        <thead class="text-secondary">
+            <th>&nbsp;&nbsp;&nbsp;</th>
+            <th>№ </th>
+            <th>#ID </th>
+            <th>Port </th>
+            <th>Type </th>
+            <th>Media Type</th>
+            <th>Communication</th>
+            <th>Connected</th>
+            <th>&nbsp;&nbsp;&nbsp;</th>
+
+        </thead>
+        <tbody id="port_formset">
+
+    {{ port_formset.management_form }}
+
+            {% for form in port_formset %}
+                <tr id="{{ port_formset.prefix }}-{{ forloop.counter1 }}" class="{% if port.instance.id %} {% endif %}">
+                     {% if port_formset.can_delete %}
+                        <td>
+                            {% if not form.instance.communication and not form.instance.connected_from.communication %}
+                                {{ form.DELETE }}
+                            {% endif %}
+                        </td>
+                    {% endif %}
+                    <td>
+                        {{ forloop.counter0 }}
+                    </td>
+                    <td>
+                        #{{ form.instance.id }}
+                    </td>
+                    <td>
+                        {{ form.instance.port_name }}
+                    </td>
+                    <td>
+                        {{ form.instance.media_type }}
+
+                    </td>
+                    <td>
+                        {{ form.instance.interface_type }}
+                    </td>
+                    <td>
+                        {% if form.instance.communication %}
+                            <a href="{% url 'communication_detail' form.instance.communication.id %}">
+                                {{ form.instance.communication }}
+                            </a>
+                        {% elif form.instance.connected_from.communication %}
+                            <a href="{% url 'communication_detail' form.instance.connected_from.communication.id %}">
+                                {{ form.instance.connected_from.communication }}
+                            </a>
+                        {% endif %}
+                    </td>
+                    <td>
+                                            {% if form.instance.communication %}
+
+                        <a href="{% url 'connections_edit' form.instance.communication.id %}">
+                            {% if form.instance.connected_to %}
+                                    / {{ form.instance.connected_to }}[{{ form.instance.connected_to.equipment }}]
+                            {% endif %}<p></p>
+                            {% if form.instance.connected_from %}
+                                    \ {{ form.instance.connected_from }}[{{ form.instance.connected_from.equipment }}]
+                        {% endif %}
+                        </a>
+                                            {% endif %}
+
+                    </td>
+                    <td>
+                        <button class="edit-button btn btn-info" data-port-id="{{ form.instance.id }}" disabled>Edit</button>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+        <div id="delete_block">
+            <input type="submit" id="unselect" class="btn btn-secondary" value="Unselect"/>
+            <input type="submit" id="delete_form_submit" class="btn btn-secondary" value="Delete selected"/>
+        </div>
+
+            </form>
+
+
+
+
+
+        <script>
+            $(document).ready(
+                $('.form_instance').on('change', "select[name*='equipment']", (e) => {
+                    console.log(e.delegateTarget, $(this), this)
+                    // создаем AJAX-вызов
+                    $.ajax({
+                        data: {
+                                'equipment': e.target.value,
+                                'id': e.target.attributes.id.value,
+                                },                                              // получаем данные формы
+                        url: "{% url 'get_ports' %}",
+                        context: e.delegateTarget,
+                        // если успешно, то
+                        success: function (response) {
+                                console.log(response)
+                                console.log('this = ', $(this))
+
+                            if (response) {
+                                console.log($(this))
+                                $(this).html(response);
+                            }
+                            else {
+
+                            }
+                        },
+                        // если ошибка, то
+                        error: function (response) {
+                            // предупредим об ошибке
+                            console.log(response.responseJSON.errors)
+                        }
+                    });
+                    return false;
+                })
+            )
+        </script>
+    <script>
+        $('#delete_form_submit').hide();
+        $('#unselect').hide();
+        $(document).ready($(document).on('click', (e)=>{
+            for(i = 0; i < $("input[type='checkbox']").length; i++)
+                {
+                    if ($("input[type='checkbox']")[i].checked)
+                        {
+                            $("#delete_form_submit").show();
+                            $('#unselect').show();
+                            return;
+                        }
+                }
+            $("#delete_form_submit").hide();
+            $('#unselect').hide();
+
+            })
+        )
+        $(document).ready($('#unselect').on('click', (e)=>{
+            e.preventDefault();
+            for(i = 0; i < $("input[type='checkbox']").length; i++)
+                {
+                    $("input[type='checkbox']")[i].checked = false;
+                }
+            $("#delete_form_submit").hide();
+            $('#unselect').hide();
+            })
+        )
+
+    </script>
+    <script>
+            $(document).ready(
+                $('.edit-button').on('click', function(e) {
+                    e.preventDefault();
+                    console.log($(this).data('port-id'));
+                     $.ajax({
+                        data: {
+                                'port_id': $(this).data('port-id'),
+                                },                                              // получаем данные формы
+                        url: "{% url 'get_edit_port_form' %}",
+                        context: e.delegateTarget,                              // контекст - объект, к которому будет привязан ответ
+                        // если успешно, то
+                        success: function (response) {
+                               console.log(response)
+                               // console.log('this = ', $(this))
+
+                            if (response) {
+                                console.log($(this))
+                                // $(this).parent("tr").after(response);
+                                // $(this).closest("tr").after(response)
+                                $('.modal-body').html(response)
+                                $('#portEditModal').modal('show')
+                                attach_modal_event()
+                            }
+                            else {
+
+                            }
+                        },
+                        // если ошибка, то
+                        error: function (response) {
+                            // предупредим об ошибке
+                            console.log(response.responseJSON.errors)
+                        }
+                    });
+                    return false;
+                })
+
+            )
+
+        </script>
+
+
+
+    <script>
+            function attach_modal_event(){
+                $('#modal-save').on('click', function(e) {
+                    e.preventDefault();
+                    console.log($(this));
+                    const csrfToken = getCookie('csrftoken');
+                    const port_name = $('#id_update-port_name')[0].value
+                    const interface_type = $('#id_update-interface_type')[0].value
+                    const media_type = $('#id_update-media_type')[0].value
+                    const note = $('#id_update-note')[0].value
+                    const port_id = $('#id_update-port_id')[0].value
+
+                    console.log(port_name, interface_type, media_type, note)
+
+                     $.ajax({
+                        type: 'POST',
+                        // dataType: 'json',
+                        data: {
+                                port_name,
+                                interface_type,
+                                media_type,
+                                note,
+                                port_id,
+                                'csrfmiddlewaretoken': csrfToken,
+                                },                                              // получаем данные формы
+                        url: "{% url 'update_port' %}",
+                        context: e.delegateTarget,                              // контекст - объект, к которому будет привязан ответ
+                        // если успешно, то
+                        success: function (response) {
+                               console.log(response)
+                               // console.log('this = ', $(this))
+
+                            if (response) {
+                                // console.log($(this))
+                                // $(this).parent("tr").after(response);
+                                // $(this).closest("tr").after(response)
+                                // $('.modal-body').html(response)
+                                // $('#portEditModal').modal('show')
+                            }
+                            else {
+
+                            }
+                        },
+                        // если ошибка, то
+                        error: function (response) {
+                            // предупредим об ошибке
+                            console.log(response.responseJSON.errors)
+                        }
+                    });
+                    return false;
+                })
+            }
+            function getCookie(name) {
+              const value = `; ${document.cookie}`;
+              const parts = value.split(`; ${name}=`);
+              if (parts.length === 2) {
+                const csrfToken = parts.pop().split(';').shift();
+    //            console.log(`CSRF Token found: ${csrfToken}`);
+                return csrfToken;
+              }
+              console.log(`CSRF Token not found`);
+              return null;
+            }
+        </script>
+
+
+
+    <div class="modal fade" id="portEditModal" tabindex="-1" role="dialog" aria-labelledby="PortEditModal" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="portEditModalTitle">Edit port</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+                Body
+
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" data-port-id="">Close</button>
+            <button type="button" class="btn btn-primary" id="modal-save">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
+
+{% endblock %}

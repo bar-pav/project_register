@@ -6,6 +6,12 @@
 
     {% if consumer %}
         {{ consumer.name }} ({{ consumer.phone }})
+
+        <a href="{% url 'consumer_edit' consumer.id %}">Изменить</a>
+
+        <form action="{% url 'consumer_edit' consumer.id %}" method="POST">{% csrf_token %}
+            <input type="submit" name="delete" value="Delete">
+        </form>
         <p>Communications:</p>
         {% for communication in consumer.communications.all %}
             <p style="margin-left: 15px;">{{ communication }}</p>

@@ -7,18 +7,63 @@
 
 <p>Location: {{ equipment.location }}</p>
 
+<a href="{% url 'equipment_update' equipment.id %}" type="button" class="btn btn-primary">Edit</a>
+<button type="button" class="btn btn-danger" data-toggle="modal" data-target="#exampleModal">
+                                        Delete
+                                    </button>
+                                    <!-- Modal -->
+                                    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                            <h5 class="modal-title" id="exampleModalLabel">Are Your Sure You Want To Delete This?</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <a href="{% url 'equipment_delete' equipment.id %}" type="button" class="btn btn-primary">Yes, Delete</a>
+                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    </div>
+
 <p>Ports: </p>
 <ul>
     {% for port in equipment.ports.all %}
         <li>
             <span style="{% if port.connected_to or port.connected_from %}color: red;{% endif %}">{{ port.port_name }}
                 {% if port.communication or port.connected_from.communication %}
-                    [Связь {% if port.communication%}{{ port.communication }}
-                                {% else %} {{ port.connected_from.communication }}
+                    [Связь  {% if port.communication%}{{ port.communication }}
+                            {% elif port.connected_from.communication %} {{ port.connected_from.communication }}
+                            {% else %} {{ port.connected_from }} Номер связи не указан.
                             {% endif %}]
             {% endif %}</span>
         </li>
     {% endfor %}
 </ul>
+
+<p>Inline ports:</p>
+
+{% if port_formset %}
+inline
+        <div id="port-fields">
+            {% for port in port_formset %}
+                <div>{{ port }}
+                    {% if port.instance.id %}<button type="button" class="btn btn-danger" id="delete-port-{{ port.instance.id }}">Delete</button>
+                    {% else %} <button type="button" class="btn remove">remove</button>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+    <a href="#" id="add-port-button" class="btn btn-secondary add-ports">Add More</a>
+
+{{ port_formset.management_form }}
+    <input type="submit" value="Submit" />
+
+
+{% endif %}
 
 {% endblock %}
