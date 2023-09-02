@@ -1,0 +1,21 @@
+{% if endpoint %}
+    <div class="">
+        <div class="bg-light">
+            <h1>{{ endpoint.code }}</h1>
+        </div>
+        {% if endpoint.name %}
+            <p class="card-text h3 m-3">{{ endpoint.name }}</p>
+        {% else %}
+            <p class="card-text h5 m-3 text-muted">Данное кодовое обозначение не имеет удобочитаемого названия.</p>
+        {% endif %}
+    </div>
+    {% if endpoint.note %}
+        <p class="card-title h4">Дополнительно: </p><p class="card-text h4 mx-3">{{ endpoint.note }}</p>
+    {% else %}
+        <p class="card-text h5 mx-3 text-muted">Нет доп. информации</p>
+    {% endif %}
+    <div class="clearfix my-2">
+        <a href="{% url 'endpoint_edit' endpoint.id %}" class="btn btn-success float-left">Изменить</a>
+        <a href="{% url 'endpoint_edit' endpoint.id %}?delete" name="delete" class="btn btn-danger float-right">Удалить</a>
+    </div>
+{% endif %}

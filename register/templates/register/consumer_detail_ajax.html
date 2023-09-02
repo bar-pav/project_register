@@ -1,0 +1,35 @@
+{% if consumer %}
+
+
+    <div class="">
+        <div class="bg-light">
+            <h1>{{ consumer.name }}</h1>
+        </div>
+        <div class="">
+            {% if consumer.telephone %}
+                <h4 class="card-title">Контакты: </h4><p class="card-text mx-3">{{ consumer.telephone }}</p>
+            {% else %}
+                <h4 class="card-title">Контакты: </h4><p class="card-text mx-3">Нет контактной информации</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="">
+        {% if consumer.note %}
+            <h4 class="card-title">Дополнительно: </h4><p class="card-text mx-3">{{ consumer.note }}</p>
+        {% endif %}
+    </div>
+
+    <div class="clearfix my-2">
+        <a href="{% url 'consumer_edit' consumer.id %}" class="btn btn-success float-left">Изменить</a>
+        <a href="{% url 'consumer_edit' consumer.id %}?delete" name="delete" class="btn btn-danger float-right">Удалить</a>
+    </div>
+    <div class="pt-5">
+        {% if consumer.communications.all %}
+            <h4 class="card-title">Связи:</h4>
+            {% for communication in consumer.communications.all %}
+                <p style="margin-left: 15px;">{{ communication }}</p>
+            {% endfor %}
+        {% endif %}
+    </div>
+{% endif %}

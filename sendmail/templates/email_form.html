@@ -1,0 +1,63 @@
+<form id="sendmail_form" method="POST">{% csrf_token %}
+    <div class="input-group mb-3">
+        <div class="input-group-prepend">
+            <span class="input-group-text" id="basic-addon1">@</span>
+        </div>
+        <input id="recipient" name="recipient" type="text" class="form-control" placeholder="Username" aria-label="Username" aria-describedby="basic-addon1">
+    </div>
+    <div class="input-group mb-3">
+        <div class="input-group-prepend">
+            <span class="input-group-text" id="inputGroup-sizing-default">Тема</span>
+        </div>
+        <input id="subject" name="subject" type="text" class="form-control" aria-label="Default" aria-describedby="inputGroup-sizing-default"
+               value="{% if communication %}Трасса для связи {{ communication.name }}.{% endif %}">
+    </div>
+    <div class="input-group">
+        <div class="input-group-prepend">
+            <span class="input-group-text">Сообщение</span>
+        </div>
+        <textarea id="message" name="message" class="form-control" aria-label="With textarea">{% if communication %}{% for port in communication.ports.all %}[{{ port.equipment }}]{{ port.get_port_name }}{% if not forloop.last %} - {% endif %}{% endfor %}{% endif %}</textarea>
+    </div>
+    <div class="input-group">
+        {% if communication %}
+            <input id="sendmail_button" type="button" class="btn btp-primary my-3" value="Отправить">
+        {% else %}
+            <input type="submit" class="btn btp-primary my-3" value="Отправить">
+        {% endif %}
+    </div>
+</form>
+
+
+{% if communication %}
+<script>
+    $(document).ready(function(){
+        $('#sendmail_button').on('click', function(){
+            const csrfToken = getCookie('csrftoken');
+            $.ajax({
+
+                    type: "POST",
+                    data: {
+                            'recipient': $('#recipient').val(),
+                            'subject': $('#subject').val(),
+                            'message': $('#message').val(),
+                            'csrfmiddlewaretoken': csrfToken,
+                            },
+                    url: "{% url 'send_email' %}",
+                    success: function (response) {
+                        if (response) {
+                            console.log(response);
+                            $('#sendmail_modal').modal('hide')
+                        }
+                        else {
+                        }
+                    },
+                    // если ошибка, то
+                    error: function (response) {
+                        // предупредим об ошибке
+                        console.log(response.responseJSON.errors)
+                    }
+                });
+        })
+    })
+</script>
+{% endif %}

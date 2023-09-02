@@ -24,17 +24,10 @@
     </head>
     <body>
 
-<!--    Block for django's messages    -->
+        <!--    Block for django's messages    -->
         {% if messages %}
-            <div class="alert alert-secondary alert-dismissible fixed-top" role="alert">
-                <button type="button" class="close" aria-label="Close" data-dismiss="alert" id="close_alert">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-                {% for message in messages %}
-                    {{ message }}
-                {% endfor %}
-            </div>
-        {% endif%}
+            {% include 'messages.html' %}
+        {% endif %}
 <!--    End messages block-->
 
         <nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top">

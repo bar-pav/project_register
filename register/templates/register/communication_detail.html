@@ -2,29 +2,104 @@
 
 {% block content %}
 
- <h1>Communication Detail</h1>
     {% if communication %}
-        {{ communication.name }} ({{ communication.consumer }})
+        <div class="d-inline h1">
+            Связь: {{ communication.name }}
+        </div>
+        <div class="d-inline">
+            (#{{ communication.id }})
+        </div>
+            {% if communication.communication_type %}
+                Тип связи: <span class="badge badge-primary">{{ communication.communication_type }}</span>
+            {% else %}
+                <span class="badge badge-warning">Тип связи не задан</span>
+            {% endif %}
+        <br>
+        <div class="mx-5 my-3">{% if communication.direction_from or communication.direction_to %}
+            <span class="h5">Направление:</span><span class="h3">{% if communication.direction_from and communication.direction_to %}
+                            {{ communication.direction_from.code }} -
+                        {% else %}
+                                {{ communication.direction_from.code }}
+                        {% endif %}
+                        {% if communication.direction_to %}
+                                {{ communication.direction_to.code }}
+                        {% endif %}
+                    {% endif %}
+            </span>
+        </div>
+        <div class="mx-5 my-3">
+            {% if communication.consumer %}
+                <span class="h5">Потребитель: </span> <span class="h3">{{ communication.consumer }}</span>
+            {% endif %}
+        </div>
+
+        {% if communication.note %}
+            <div class="mx-5 my-3">
+                <span class="h6">Дополнительная информация: </span> <span class="h6">{{ communication.note }}</span>
+            </div>
+        {% endif %}
 
         {% if communication.ports.all %}
-            <p>Connected ports.
-                <ul>
-                    {% for port in communication.ports.all %}
-                       {% if forloop.first %} [{{ port.equipment }}] {{ port }} - [{{ port.connected_to.equipment }}] {{ port.connected_to }} {% else %} - [{{ port.connected_to.equipment }}] {{ port.connected_to }} {% endif %}
-                    {% endfor %}
-                     <a href="{% url 'connections_edit' communication.pk %}" class="btn btn-info">Edit connections</a></p>
-                </ul>
+            <div class="clearfix mx-5 mt-5 mb-2">
+                <p class="h3 float-left">Порты</p>
+                <a href="{% url 'connections_delete' communication.pk %}" class="btn btn-danger float-right ">Удалить коннекции</a>
+                <a href="{% url 'connection_edit_with_filter' communication.pk %}" class="btn btn-info float-right mx-2">Изменить порты</a>
+            </div>
+            <div class="mx-5 d-flex flex-wrap">
+                {% for port in communication.ports.all %}
+                    <div class="card my-2" style="width: 15rem;">
+                        <div class="card-body bg-light">
+                            <h5 class="card-title bg-{% if port.equipment.type == 'E' %}primary{% elif port.equipment.type == 'F' %}info{% else %}light{% endif %} p-3 rounded">{{ port.equipment }}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">{{ port.equipment.get_type_display }}</h6>
+                            <p class="card-text">Порт: {{ port.get_port_name }}</p>
+                            <a href="#" class="card-link"></a>
+                            <a href="#" class="card-link"></a>
+                        </div>
+                    </div>
+                    {% if not forloop.last %}
+                        <div class="d-inline align-middle" style="width: 4rem; position:relative;">
+                            <div class="arrow-2">
+                                <div class="arrow-2-top"></div>
+                                <div class="arrow-2-bottom"></div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
 
-                <p><a href="{% url 'connections_delete' communication.pk %}" class="btn btn-danger">Delete connections</a></p>
-
-            {% else %}
-                    <p><a href="{% url 'connections_create' communication.pk %}" class="btn btn-success">Add connections</a></p>
-            {% endif %}
+            <div class="clearfix px-5">
+                <button type="button" class="btn btn-dark float-right" data-toggle="modal" data-target="#sendmail_modal">Отправить трассу</button>
+            </div>
+        {% else %}
+            <p class="mx-5 "><a href="{% url 'connection_edit_with_filter' communication.pk %}" class="btn btn-success">Добавить коннекции</a></p>
+        {% endif %}
     {% else %}
-        <p>There are no communication detail</p>
-
-
+        <p>Связь не найдена.</p>
 
     {% endif %}
+
+
+
+
+    <p></p><p></p>
+
+
+                    <!-- Modal window for delete confirmation -->
+                        <div class="modal fade" id="sendmail_modal" tabindex="-1" role="dialog" aria-labelledby="SendMail" aria-hidden="true">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="send-mail-title"><b>Отправить сообщение</b></h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <div class="modal-body">
+                                        {% include 'email_form.html' %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <!-- End modal confirmation      -->
 
 {% endblock %}

@@ -10,11 +10,11 @@
     {% if equipment_form %}
         <div class="form-group">
             <input type="text" name="name" id="id_name" class="form-control {% if equipment_form.name.errors %}is-invalid{% endif %}" placeholder="{{ equipment_form.name.label }}" value="{% if equipment_form.name.value %}{{ equipment_form.name.value }}{% endif %}">
-                {% if equipment_form.name.errors %}
-                    <div class="invalid-feedback">
-                        {{ equipment_form.name.errors }}
-                    </div>
-                {% endif %}
+            {% if equipment_form.name.errors %}
+                <div class="invalid-feedback">
+                    {{ equipment_form.name.errors }}
+                </div>
+            {% endif %}
         </div>
         <div class="form-group">
             <label class="">{{ equipment_form.type.label }}</label>
@@ -23,19 +23,28 @@
         <div class="form-group">
             <label class="">{{ equipment_form.endpoint.label }}</label>
             {{ equipment_form.endpoint }}
-                {% if equipment_form.endpoint.errors %}
-                    <div class="invalid-feedback">
-                        {{ equipment_form.endpoint.errors }}
-                    </div>
-                {% endif %}
+            {% if equipment_form.endpoint.errors %}
+                <div class="invalid-feedback">
+                    {{ equipment_form.endpoint.errors }}
+                </div>
+            {% endif %}
         </div>
         <div class="form-group">
             <input type="text" name="location" id="id_location" class="form-control {% if equipment_form.location.errors %}is-invalid{% endif %}" placeholder="{{ equipment_form.location.label }}" value="{% if equipment_form.location.value %}{{ equipment_form.location.value }}{% endif %}">
-                {% if equipment_form.location.errors %}
-                    <div class="invalid-feedback">
-                        {{ equipment_form.location.errors }}
-                    </div>
-                {% endif %}
+            {% if equipment_form.location.errors %}
+                <div class="invalid-feedback">
+                    {{ equipment_form.location.errors }}
+                </div>
+            {% endif %}
+        </div>
+        <div class="form-group mt-5">
+            <label class="">{{ equipment_form.endpoint_opposite.label }}</label>
+            {{ equipment_form.endpoint_opposite }}
+            {% if equipment_form.endpoint_opposite.errors %}
+                <div class="invalid-feedback">
+                    {{ equipment_form.endpoint_opposite.errors }}
+                </div>
+            {% endif %}
         </div>
 
     {% endif %}

@@ -5,30 +5,20 @@ from django.core.exceptions import ValidationError
 from django.forms.widgets import HiddenInput
 from .models import Connection, Port, Equipment, Communication, EndPoint, Consumer
 from django.forms import formset_factory, inlineformset_factory
-
-
-class ConnectionPointForm(forms.Form):
-    equipment = forms.ModelChoiceField(queryset=Equipment.objects.all(), required=False)
-    port_name = forms.ModelChoiceField(queryset=Port.objects.all(), required=False)
-
-    fields = ['equipment', 'port_name']
-
-    # def __init__(self, *args, **kwargs):
-    #     super(ConnectionPointForm, self).__init__(*args, **kwargs)
-    #
-    #     self.fields['equipment']
+from django.db.models import Q
 
 
 class EquipmentForm(forms.ModelForm):
     class Meta:
         model = Equipment
         fields = '__all__'
-        exclude = ['note']
+        # exclude = ['note']
         widgets = {'note': forms.Textarea(attrs={"cols": 50, "rows": 3})}
         labels = {'name': 'Название',
                   'endpoint': 'ИП',
                   'location': 'Расположено',
                   'type': 'Тип',
+                  'endpoint_opposite': 'Противоположный ИП (для систем)'
                   }
 
     def __init__(self, *args, **kwargs):
@@ -37,6 +27,7 @@ class EquipmentForm(forms.ModelForm):
         self.fields['endpoint'].widget.attrs['class'] = 'form-control'
         self.fields['location'].widget.attrs.update({'class': 'form-control'})
         self.fields['type'].widget.attrs['class'] = 'form-control'
+        self.fields['endpoint_opposite'].widget.attrs['class'] = 'form-control'
 
 
 
@@ -52,10 +43,12 @@ class CreatePortForm(PortForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['port_name'].widget.attrs['autocomplete'] = 'off'
-        self.fields['port_name'].widget.attrs['class'] = 'form-control'
+        self.fields['port_name'].widget.attrs.update({'autocomplete': 'off', 'class': 'form-control'})
+        self.fields['port_name'].label = 'Обозначение'
         self.fields['interface_type'].widget.attrs['class'] = 'form-control'
+        self.fields['interface_type'].label = 'Тип интерфейса'
         self.fields['media_type'].widget.attrs['class'] = 'form-control'
+        self.fields['media_type'].label = 'Тип сигнала'
         print()
 
 
@@ -85,16 +78,16 @@ def port_formset_factory(extra=None):
     return formset_factory(PortDetailForm, formset=PortBaseFormSet, can_delete=True, extra=extra)
 
 
-class EndPointEditForm(forms.Form):
-    endpoint_name = forms.CharField(max_length=100, help_text="Maximum 100 characters.")
-
-    def clean_endpoint_name(self):
-        name = self.cleaned_data['endpoint_name']
-
-        if not name:
-            raise forms.ValidationError("Field can't be empty.")
-        
-        return name
+# class EndPointEditForm(forms.Form):
+#     endpoint_name = forms.CharField(max_length=100, help_text="Maximum 100 characters.")
+#
+#     def clean_endpoint_name(self):
+#         name = self.cleaned_data['endpoint_name']
+#
+#         if not name:
+#             raise forms.ValidationError("Field can't be empty.")
+#
+#         return name
 
 
 class EndPointModelForm(forms.ModelForm):
@@ -168,53 +161,102 @@ class PortModelForm(forms.Form):
 
 
 # New connection point form TODO
-class ConnectionPortForm(forms.Form):
+class OnePointConnectionForm(forms.Form):
     endpoint = forms.ModelChoiceField(queryset=None, required=False)
-    equipment_type = forms.ModelChoiceField(queryset=None, required=False)
+    # equipment_type = forms.ModelChoiceField(queryset=None, required=False)
+    equipment_type = forms.ChoiceField(choices=Equipment.type_choices, required=False,)
     equipment = forms.ModelChoiceField(queryset=None, required=False)
-    port_name = forms.ModelChoiceField(queryset=None, required=False)
+    port = forms.ModelChoiceField(queryset=None, required=False)
 
-    def __init__(self, reserved_ports=None, *args, **kwargs):
-        super(ConnectionPortForm, self).__init__(*args, **kwargs)
+    def __init__(self, reserved_ports=None, communication_type=None, equipment_set=None, port_set=None, *args, **kwargs):
+        super(OnePointConnectionForm, self).__init__(*args, **kwargs)
         print('initial', self.initial)
         self.reserved_ports = reserved_ports
+        self.communication_type = communication_type
         print('reserved ports', self.reserved_ports)
-        self.fields['endpoint'].queryset = EndPoint.objects.all()
-        self.fields['equipment_type'].queryset = self.get_queryset(Equipment, 'type')
-        self.fields['equipment'].queryset = self.get_queryset(Equipment, 'equipment')
-        self.fields['port_name'].queryset = self.get_queryset(Port, 'port_name')
+        # self.fields['endpoint'].queryset = endpoint_set or EndPoint.objects.all()
+        # self.fields['equipment'].queryset = equipment_set or self.get_queryset(Equipment, 'equipment')  # , filter=['endpoint', 'type']
+        # self.fields['port_name'].queryset = port_set or self.get_queryset(Port, 'port_name')
+        self.get_querysets()
+        self.fields['endpoint'].widget.attrs.update({'class': 'filter form-control'})
+        self.fields['equipment_type'].widget.attrs.update({'class': 'filter form-control'})
+        self.fields['equipment'].widget.attrs.update({'class': 'filter form-control'})
+        self.fields['port'].widget.attrs.update({'class': 'form-control'})
 
         # self.fields['equipment'].widget.attrs['class'] = 'form-control'
-        # self.fields['port_name'].widget.attrs['class'] = 'form-control'
+        # self.fields['port'].widget.attrs['class'] = 'form-control'
 
-        print('FIELDS:', self.fields['equipment'].__dict__)
+        # print('FIELDS:', self.fields['equipment'].__dict__)
 
-    def get_queryset(self, model, field):
-        equipment_id = self.initial.get('equipment') or self.data.get('equipment')
-        port_name = self.initial.get('port_name') or self.data.get('port_name')
-        exclude_ports = self.reserved_ports
-        # print('exclude_ports', exclude_ports)
-        print('------______----____---___:', port_name)
-        if equipment_id and port_name:
-            return Port.objects.filter(id=port_name).all()
-        if equipment_id:
-            return Port.objects.filter(equipment__exact=equipment_id).filter(communication__isnull=True).filter(
-                connected_to=None).filter(connected_from=None).all()
+
+    def get_querysets(self):
+        endpoint = self.initial.get('endpoint') or self.data.get('endpoint')
+        equipment_type = self.initial.get('equipment_type') or self.data.get('equipment_type')
+        equipment = self.initial.get('equipment') or self.data.get('equipment')
+        port = self.initial.get('port') or self.data.get('port')
+
+        from itertools import chain
+        if port:
+            # ports = Port.objects.filter(equipment=equipment)
+            ports = Port.objects.filter(equipment=equipment).exclude(~Q(pk=port) & Q(communication=None) & Q(connected_to=None))
+            equipments = Equipment.objects.filter(type=equipment_type) or Equipment.objects.all()
+            type_choices = Equipment.type_choices
+            endpoints = EndPoint.objects.all()
+
         else:
-            return Port.objects.none()
+            endpoints = EndPoint.objects.all()
+            ports = Port.objects.none()
+            equipments = Equipment.objects.none()
+            type_choices = [('', '---------'), ]
+            if endpoint:
+                type_choices = Equipment.type_choices
+                equipments = Equipment.objects.filter(endpoint=endpoint)
+                if equipment_type:
+                    equipments = equipments.filter(type=equipment_type)
+                if equipment:
+                    # ports = Port.objects.filter(equipment=equipment).filter(connected_to=None).filter(communication=None)
+                    print('commun type:', self.communication_type)
+                    ports = Port.objects.filter(equipment=equipment).filter(Q(connected_to__equipment__type='F') | Q(connected_to=None)).filter(communication=None).filter(interface_type=self.communication_type)
+
+        self.fields['endpoint'].queryset = endpoints
+        self.fields['equipment_type'].choices = type_choices
+        self.fields['equipment'].queryset = equipments
+        self.fields['port'].queryset = ports
+
+
+
+
+        # if equipment:
+        #     ports = Port.objects.filter(equipment=equipment)
+        #     equipment = Equipment.objects.filter(type=equipment_type).filter(endpoint=endpoint)
+        # elif equipment_type:
+        #     equipment = Equipment.objects.filter(type=equipment_type).filter(endpoint=endpoint)
+        # else:
+        #     pass
+        # exclude_ports = self.reserved_ports
+        # # print('exclude_ports', exclude_ports)
+        # print('------______----____---___:', port_name)
+        # if equipment_id and port_name:
+        #     return Port.objects.filter(id=port_name).all()
+        # if equipment_id:
+        #     return Port.objects.filter(equipment__exact=equipment_id).filter(communication__isnull=True).filter(
+        #         connected_to=None).filter(connected_from=None).all()
+        # else:
+        #     return Port.objects.none()
+        # return model.objects.all()
 
     def clean_port_name(self):
-        port_name = self.cleaned_data['port_name']
+        port_name = self.cleaned_data['port']
         return port_name
 
     def clean(self):
         cleaned_data = super().clean()
-        port_name = cleaned_data['port_name']
+        port_name = cleaned_data['port']
         equipment = cleaned_data['equipment']
         if equipment is None:
-            self.add_error('equipment', 'Error: Equipment is empty.')
+            self.add_error('equipment', 'Error: Equipment field is empty.')
         if port_name is None:
-            self.add_error('port_name', 'Error: Port is empty.')
+            self.add_error('port', 'Error: Port field is empty.')
 
 
 
@@ -222,19 +264,23 @@ class ConnectionPortForm(forms.Form):
 
 class ManagementForm(forms.Form):
     """
-    Uses for save information between page reloading.
+    ManagementForm используется для хранения количества форм между перезагрузками страницы.
     """
     num_of_forms = forms.IntegerField(widget=HiddenInput)
     # initial_num = forms.IntegerField(widget=HiddenInput)
 
 
 class CustomFormset:
-    def __init__(self, form_class, request_post, initial_data=None, instances=None, prefix='form'):
+    """
+    Упрощенная реализация formset'ов.
+    """
+    def __init__(self, form_class, request_post, initial_data=None, instances=None, prefix='form', communication_type=None):
         self.form_class = form_class
         self.initial_data = initial_data
         self.instances = instances
         self.is_bound = None
         self.is_submit = None
+        self.communication_type = communication_type
         if initial_data:
             self.num_of_forms = len(max(initial_data.values(), key=len))
             self.request_post = {**request_post, **initial_data}
@@ -277,7 +323,6 @@ class CustomFormset:
             return form
         form = ManagementForm(data={
             'num_of_forms': '0',
-            # 'initial_num': str(self.num_of_forms)
         })
         form.full_clean()
         return form
@@ -285,7 +330,6 @@ class CustomFormset:
     def update_management_form(self):
         return ManagementForm(data={
             'num_of_forms': self.num_of_forms,
-            # 'initial_num': self.get_management_form().cleaned_data['initial_num']
         })
 
     def get_num_of_forms(self):
@@ -305,20 +349,17 @@ class CustomFormset:
 
     def get_form_kwargs(self, index, delete_index=None):
         # print('********************** get_from_kwargs > ', self.request_post)
-        # print('fields:', self.form_fields)
         if delete_index is not None:
             if index >= delete_index:
                 index += 1
         form_kwargs = {}
         if self.initial_data:
-            # print('get_form_kwargs > initial_data = ', self.initial_data)
             form_kwargs.update({field_name: self.request_post[field_name][index] for field_name in self.initial_data})
             return form_kwargs
         for field in self.form_fields:
             field_list = self.request_post.getlist(field)
             if field_list and index < len(field_list):
                 form_kwargs[field] = field_list[index]
-        # print('from_kwargs:', form_kwargs, 'index', index)
         return form_kwargs
 
     def create_forms(self):
@@ -331,13 +372,13 @@ class CustomFormset:
     def create_form(self, initial=None, data=None, auto_id=None, index=None):
         form = self.form_class(initial=initial,
                                data=data,
-                               auto_id=auto_id)
+                               auto_id=auto_id,
+                               communication_type=self.communication_type)
         form.index = index
         return form
 
     def add_empty_form(self):
         # print("************* add_empty_form method **************")
-        # print(self.request_post)
         self.fill_initial()
         self.forms.append(self.create_form(auto_id=self.get_auto_id(self.num_of_forms),
                                            index=self.num_of_forms))
@@ -363,7 +404,6 @@ class CustomFormset:
     def cleaned_data(self):
         if self.is_valid():
             return [form.cleaned_data for form in self.forms]
-        # raise ValidationError("'%s' object does not pass validation" % self.__class__.__name__)
 
     def is_valid(self):
         return all([form.is_valid() for form in self.forms])
@@ -389,14 +429,8 @@ class CustomFormset:
             if result_add:
                 self.insert_empty_form(int(result_add[0]))
         if 'submit' in self.request_post:
-            # print('bounding form')
             self.bound_forms()
-            # print("catch_action_with_form > forms", self.forms)
-            # print("catch_action_with_form > cleaned data:", self.cleaned_data())
-            # print("catch_action_with_form > forms", self.forms)
             self.is_submit = True
-            # print('initial_num of forms:', self.management_form['initial_num'])
-
             print('cath_action_with_form > cleaned data: ', self.cleaned_data())
 
     @staticmethod

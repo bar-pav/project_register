@@ -60,3 +60,32 @@ span.logo {
 .side-hide {
     display: none;
 }
+
+
+
+<!-- arrow ->
+.arrow-2 {
+}
+.arrow-2-top,
+.arrow-2-bottom {
+    background: #337AB7;
+    height: 10px;
+    left: 0px;
+    position: absolute;
+    top: 92px;
+    width: 50px;
+}
+.arrow-2-top {
+    top: 96px;
+}
+.arrow-2-top {
+    transform: rotate(45deg);
+    transform-origin: bottom right;
+}
+.arrow-2-bottom {
+    transform: rotate(-45deg);
+    transform-origin: top right;
+}
+
+
+

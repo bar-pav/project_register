@@ -1,5 +1,6 @@
 from django.urls import path, re_path
 from . import views
+# from .models import EndPoint, Communication, Consumer
 
 
 urlpatterns = [
@@ -16,30 +17,40 @@ urlpatterns = [
     re_path(r'^equipment/(?P<pk>\d+)/delete_port$', views.delete_port_from_equipment, name='delete_port'),
 
     path('communications/', views.CommunicationsListView.as_view(), name='communications'),
+    # path('communications/',  views.objects_list_view, kwargs={'model': 'Communication'}, name='communications'),
     re_path(r'^communication/(?P<pk>\d+)$', views.CommunicationDetailView.as_view(), name='communication_detail'),
     path('communication/create', views.CommunicationCreateView.as_view(), name='communication_create'),
     path('communication/<pk>/update', views.CommunicationUpdateView.as_view(), name='communication_update'),
-    path('communication/<pk>/delete', views.CommunicationDeleteView.as_view(), name='communication_delete'),
-    path('communication/<pk>/connection', views.connection_edit, name='connection_edit'),
+    # path('communication/<pk>/delete', views.CommunicationDeleteView.as_view(), name='communication_delete'),
+    path('communication/<pk>/delete', views.communication_delete_view, name='communication_delete'),
+    # path('communication/<pk>/connection', views.connection_edit, name='connection_edit'),
     # path('communication/<pk>/ports', views.communication_ports, name='communication_ports'),
 
-    path('consumers/', views.ConsumersListView.as_view(), name='consumers'),
-    path('consumer/<pk>', views.ConsumerDetailView.as_view(), name='consumer_detail'),
-    path('consumer/<pk>/update', views.consumer_create_update, name='consumer_edit'),
-    path('endpoints/', views.EndPointsListView.as_view(), name='endpoints'),
-    path('endpoint/<pk>', views.EndPointDetailView.as_view(), name='endpoint_detail'),
-    path('endpoints/<pk>/edit', views.endpoint_create_update, name='endpoint_edit'),
-    path('endpoints/create', views.endpoint_create_update, name='endpoint_create'),
+    # path('consumers/', views.ConsumersListView.as_view(), name='consumers'),
+    path('consumers/', views.objects_list_view, kwargs={'model': 'Consumer'}, name='consumers'),
+    re_path(r'^consumer/(?P<pk>\d+)$', views.ConsumerDetailView.as_view(), name='consumer_detail'),
+    re_path(r'^consumer/(?P<pk>\d+)/update$', views.consumer_create_update, name='consumer_edit'),
+    path('consumer/create', views.consumer_create_update, name='consumer_create'),
+    # path('endpoints/', views.EndPointsListView.as_view(), name='endpoints'),
+    path('endpoints/', views.objects_list_view, kwargs={'model': 'EndPoint'}, name='endpoints'),
+    re_path(r'^endpoint/(?P<pk>\d+)$', views.EndPointDetailView.as_view(), name='endpoint_detail'),
+    re_path(r'^endpoint/(?P<pk>\d+)/edit$', views.endpoint_create_update, kwargs={'model': 'EndPoint'}, name='endpoint_edit'),
+    path('endpoint/create', views.endpoint_create_update, kwargs={'model': 'EndPoint'}, name='endpoint_create'),
 
     path('connection_form', views.connection_form_view, name='connection_form'),
-    path('communication/<pk>/connections_create', views.connections_create, name='connections_create'),
-    path('communication/<pk>/connections_edit', views.connections_edit, name='connections_edit'),
+    # path('communication/<pk>/connections_create', views.connections_create, name='connections_create'),
+    # path('communication/<pk>/connections_edit', views.connections_edit, name='connections_edit'),
     path('communication/<pk>/connections_delete', views.connections_delete, name='connections_delete'),
 
+    path('communication/<pk>/connection_edit_with_filter', views.connection_edit_with_filter, name='connection_edit_with_filter'),
+
     # AJAX requests URLs
-    path('get_ports_for_equipment', views.get_ports, name='get_ports'),
+    # path('get_ports_for_equipment', views.get_ports, name='get_ports'),
+    path('get_ports_for_equipment_test', views.get_ports_test, name='get_ports_test'),
     path('get_edit_port_form', views.get_edit_port_form, name='get_edit_port_form'),
     path('update_port', views.update_port, name='update_port'),
-    path('get_endpoint_detail', views.get_endpoint_detail, name='get_endpoint_detail'),
+    path('get_endpoint_detail', views.get_model_detail, name='get_endpoint_detail'),
+    path('get_consumer_detail', views.get_model_detail, name='get_consumer_detail'),
+    path('search_communication', views.search_communication, name="search_communication"),
 
 ]

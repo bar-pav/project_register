@@ -129,6 +129,16 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = '/'
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
-DEFAULT_FROM_EMAIL = 'admin@register.com'
+DEFAULT_FROM_EMAIL = 'zagruzka.info@mail.ru'
+
+EMAIL_HOST = 'smtp.mail.ru'
+EMAIL_HOST_USER = 'zagruzka.info@mail.ru'
+EMAIL_HOST_PASSWORD = 'N238XVw1vNggZwZjCtg2'
+# если используется защищенное соединение
+EMAIL_PORT = 2525
+# EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False

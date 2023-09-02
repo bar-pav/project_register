@@ -31,3 +31,16 @@ $(document).ready(
         return false;
     })
 )
+
+
+function getCookie(name) {
+              const value = `; ${document.cookie}`;
+              const parts = value.split(`; ${name}=`);
+              if (parts.length === 2) {
+                const csrfToken = parts.pop().split(';').shift();
+    //            console.log(`CSRF Token found: ${csrfToken}`);
+                return csrfToken;
+              }
+              console.log(`CSRF Token not found`);
+              return null;
+            }

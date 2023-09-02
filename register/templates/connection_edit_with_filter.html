@@ -1,0 +1,128 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+
+<h1>Точки проключения для связи: "{{ communication.name }}"</h1>
+
+<form method="post">{% csrf_token %}
+    {{ formset.management_form }}
+
+    {% if formset %}
+        Количество форм: {{ num_forms }}
+
+        <div class="container">
+            {% for form in formset %}
+                <div class="row">
+                    <div class="col-md-6 offset-md-4">
+                        <input type="submit" name="add-{{ form.index }}" value="+" class="add-button"><p></p>
+                    </div>
+                </div>
+                <div class="port_form row form-group">
+                    {% for field in form %}
+                         <div class="col">
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">{{ field.label }}</span>
+                                </div>
+                            {{ field }}
+                            </div>
+                         </div>
+                    {% endfor %}
+                    <div class="col">
+                        <input type="submit" class="btn btn-danger" name="delete-{{ form.index }}" value="delete field {{ form.index }}">
+                    </div>
+                </div>
+            {% endfor %}
+            <div class="row">
+                <div class="col-md-6 offset-md-4">
+                    <input type="submit" name="add_field" value="+" class="add-button"> <!-- Add empty form to the end. -->
+                </div>
+            </div>
+        </div>
+
+<!--        <button class="btn btn-success add-button">+</button>-->
+
+    {% else %}
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 offset-md-4">
+                    <input type="submit" name="add_field" value="+" class="add-button"> <!-- Add empty form to the end. -->
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    <p></p>
+
+    <script>
+        $(document).ready(
+            $('.port_form').on('change', ".filter", (e) => {
+              //console.log('e delegate target:', e.delegateTarget)
+              console.log('e target:', e.target)
+              //console.log('jquery target object:', $(e.target))
+              //  console.log('e', e.delegateTarget.querySelector('select[name="equipment"]').value)
+
+                // создаем AJAX-вызов
+                $.ajax({
+                    data: {
+                            'endpoint': get_value(e.target, 'endpoint'),
+                            'equipment_type': get_value(e.target, 'equipment_type'),
+                            'equipment': get_value(e.target, 'equipment'),
+                    //        'equipment': e.target.value,
+                            'id': e.target.attributes.id.value,
+                            'communication_type': {{ formset.communication_type.id }},
+                            },                                              // получаем данные формы
+                    url: "{% url 'get_ports_test' %}",
+                    context: e.delegateTarget,
+                    // если успешно, то
+                    success: function (response) {
+                            // console.log(response)
+                            // console.log('this = ', $(this))
+
+                        if (response) {
+                            // console.log($(this))
+                            $(this).html(response);
+                        }
+                        else {
+                            $('#id_username').removeClass('is-invalid').addClass('is-valid');
+                            $('#usernameError').remove();
+                        }
+                    },
+                    // если ошибка, то
+                    error: function (response) {
+                        // предупредим об ошибке
+                        console.log(response.responseJSON.errors)
+                    }
+                });
+                return false;
+            })
+        )
+
+
+        function get_value(target, name){
+            console.log($(target).attr('name'))
+            if ($(target).attr('name') == name){
+                console.log($(target)[0].value)
+                return $(target)[0].value
+            }
+            select_element = $(target).closest('.col').prevUntil('.port_form').find(`select[name="${name}"]`)
+            //console.log(`select[name="${name}"]`)
+            //console.log(Boolean(select_element.length))
+            console.log(select_element)
+            if (select_element.length){
+                console.log(select_element[0].value)
+                return select_element[0].value
+            }
+            else return null
+        }
+
+
+    </script>
+
+
+    <input type="submit" name="submit" value="Сохранить" class="btn btn-success">
+    <a href="{% url 'communications' %}" type="button" name="cancel" class="btn btn-secondary">Отмена</a>
+
+</form>
+
+
+{% endblock %}

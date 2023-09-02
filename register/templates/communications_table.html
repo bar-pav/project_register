@@ -1,0 +1,53 @@
+{% if messages %}
+    {% include 'messages.html' %}
+{% endif %}
+
+<table class="table table-striped">
+    <thead class="text-secondary">
+        <th>№</th>
+        <th>#ID</th>
+        <th>название</th>
+        <th>откуда</th>
+        <th>куда</th>
+        <th>потребитель</th>
+        <th>порты</th>
+        <th>удалить</th>
+    </thead>
+    <tbody>
+        {% for communication in communication_list %}
+            <tr>
+                <td>
+                    {{ forloop.counter }}
+                </td>
+                <td>
+                    {{ communication.id }}
+                </td>
+                <td>
+                    <a href="{% url 'communication_update' communication.pk %}?next={{ request.path }}">{{ communication.name }}</a>
+                </td>
+                <td>
+                    {{ communication.direction_from.code }}
+                </td>
+                <td>
+                    {{ communication.direction_to.code }}
+                </td>
+                <td> <a href="{% url 'consumer_detail' communication.consumer.pk %}">{{ communication.consumer.name }}</a></td>
+                <td>
+                    <a href="{{ communication.get_absolute_url }}">
+                    {{ communication.ports.all.0.equipment.name }} / {{ communication.ports.all.0.port_name }} {% if communication.ports.all|length > 1%} - ...{% endif %}</a>
+                </td>
+                <td>
+                    <input class="form-check-input" type="checkbox" id="delete-{{communication.id}}" data-communication_id="{{communication.id}}">
+<!--                    <a href="{% url 'communication_delete' communication.pk %}">х</a>-->
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div id="delete_block">
+    <input type="button" id="unselect" class="btn btn-secondary" value="Отмена"/>
+    <input type="button" id="delete_form_submit" class="btn btn-secondary" value="Удалить"/>
+</div>
+
+

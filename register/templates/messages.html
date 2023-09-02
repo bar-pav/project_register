@@ -1,0 +1,8 @@
+{% for message in messages %}
+    <div class="alert alert-{% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}danger{% elif message.level == DEFAULT_MESSAGE_LEVELS.SUCCESS %}success{% else %}secondary{% endif %} alert-dismissible fixed-top" role="alert">
+        <button type="button" class="close" aria-label="Close" data-dismiss="alert" id="close_alert">
+            <span aria-hidden="true">&times;</span>
+        </button>
+            {{ message }}
+    </div>
+{% endfor %}

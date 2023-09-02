@@ -1,0 +1,104 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+
+
+    <div class="clearfix mx-5 mt-5 mb-2">
+        <p class="h3 float-left">{{ title }}</p>
+        {% if model == "EndPoint" %}
+            <a href="{% url 'endpoint_create' %}" class="btn btn-info float-right">Добавить</a>
+        {% else %}
+            <a href="{% url 'consumer_create' %}" class="btn btn-info float-right">Добавить</a>
+        {% endif %}
+    </div>
+
+    {% if objects %}
+        <table class="table table">
+            <thead class="thead">
+                <th>№</th>
+                <th>#ID</th>
+                {% if objects.0.code %}
+                    <th>Код</th>
+                {% endif %}
+                <th>Название</th>
+            </thead>
+            <tbody>
+            {% for object in objects %}
+                <tr>
+                    <td data-object_id="{{ object.id }}">{{ forloop.counter }}</td>
+                    <td data-object_id="{{ object.id }}">{{ object.id }}</td>
+                    {% if object.code %}
+                        <td data-object_id="{{ object.id }}">{{ object.code }}</td>
+                    {% endif %}
+                    <td data-object_id="{{ object.id }}">{{ object.name }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+
+
+        <div class="modal fade" id="ShowDetailModal" tabindex="-1" role="dialog" aria-labelledby="" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-body"></div>
+                </div>
+            </div>
+        </div>
+
+
+
+
+<script>
+    $(document).ready(
+        function(){
+              $('td').on('click', function(e){
+                    $('.active').each(function(){$(this).removeClass('active')});
+                    $(this).addClass('active');
+
+                    $.ajax({
+                        data: {
+                                "object_id": $(this).data('object_id'),
+                                "model": "{{ model }}"
+                                },                                              // получаем данные формы
+                        url: {% if model == 'EndPoint' %} "{% url 'get_endpoint_detail' %}" {% elif model == 'Consumer' %} "{% url 'get_consumer_detail' %}" {% endif %},
+                        context: e.delegateTarget,                              // контекст - объект, к которому будет привязан ответ
+                        // если успешно, то
+                        success: function (response) {
+                                    console.log(response)
+                                    if (response) {
+                                        console.log($(this))
+                                        $('.modal-body').html(response)
+                                        $('#ShowDetailModal').modal()
+                                    }
+                                },
+
+                        // если ошибка, то
+                        error: function (response) {
+                            console.log(response.responseJSON.errors)  // предупредим об ошибке
+                        }
+                    });
+              })
+        })
+
+
+
+
+
+
+
+    function replaceClass(element, oldClass, newClass) {
+        if (element.hasClass(oldClass)) {
+            element.removeClass(oldClass);
+        }
+        element.addClass(newClass);
+    }
+
+
+
+
+</script>
+
+
+{% endblock %}
