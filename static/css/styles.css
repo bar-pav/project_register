@@ -1,0 +1,149 @@
+.sidebar-nav {
+    margin-top: 20px;
+    padding: 0;
+    list-style: none;
+}
+
+span.logo {
+    font-size: 1.9em;
+    color: green;
+}
+
+.add-button {
+    background-color: white; /* Green */
+    border: 2px solid #4CAF50;
+    border-radius: 50%;
+    color: #4CAF50;
+    padding: 0px 10px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 20px;
+    text-color: #4CAF50;
+    opacity: 0.6;
+}
+
+.add-button:hover {
+    background-color: white; /* Green */
+    border: 2px solid #4CAF50;
+    border-radius: 50%;
+    color: #4CAF50;
+    padding: 0px 10px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 20px;
+    text-color: #4CAF50;
+    opacity: 1;
+}
+
+
+#delete_block {
+    position: fixed; /* Фиксированное положение */
+    right: 15%; /* Расстояние от правого края окна браузера */
+    top: 95%; /* Расстояние сверху */
+}
+
+.side {
+    position: fixed;
+    right: 0px;
+    left: 50%;
+    height: 100%;
+    background: #fc0;
+    padding: 20px
+}
+
+.side-show {
+    display: block;
+}
+
+.side-hide {
+    display: none;
+}
+
+
+
+<!-- arrow ->
+.arrow-2 {
+}
+.arrow-2-top,
+.arrow-2-bottom {
+    background: #337AB7;
+    height: 10px;
+    left: 0px;
+    position: absolute;
+    top: 92px;
+    width: 50px;
+}
+.arrow-2-top {
+    top: 96px;
+}
+.arrow-2-top {
+    transform: rotate(45deg);
+    transform-origin: bottom right;
+}
+.arrow-2-bottom {
+    transform: rotate(-45deg);
+    transform-origin: top right;
+}
+
+
+
+
+
+
+
+
+@property --p{
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+
+.pie {
+  --p:20;
+  --b:22px;
+  --c:darkred;
+  --w:200px;
+
+  width: var(--w);
+  aspect-ratio: 1;
+  position: relative;
+  display: inline-grid;
+  margin: 5px;
+  place-content: center;
+  font-size: 18px;
+  font-weight: bold;
+  font-family: sans-serif;
+}
+.pie:before,
+.pie:after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+}
+.pie:before {
+  inset: 0;
+  background:
+    radial-gradient(farthest-side,var(--c) 98%,#0000) top/var(--b) var(--b) no-repeat,
+    conic-gradient(var(--c) calc(var(--p)*1%),#0000 0);
+  -webkit-mask: radial-gradient(farthest-side,#0000 calc(99% - var(--b)),#000 calc(100% - var(--b)));
+          mask: radial-gradient(farthest-side,#0000 calc(99% - var(--b)),#000 calc(100% - var(--b)));
+}
+.pie:after {
+  inset: calc(50% - var(--b)/2);
+  background: var(--c);
+  transform: rotate(calc(var(--p)*3.6deg)) translateY(calc(50% - var(--w)/2));
+}
+.animate {
+  animation: p 1s .5s both;
+}
+.no-round:before {
+  background-size: 0 0, auto;
+}
+.no-round:after {
+  content: none;
+}
+@keyframes p{
+  from{--p:0}
+}
