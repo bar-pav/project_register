@@ -11,22 +11,20 @@
       </ol>
     </nav>
 
-    <div id="equipment_detail">
-        <div class="px-5">
+    <div id="equipment_detail" class="my-3 p-4 rounded shadow-lg">
+        <div class="px-3">
             <h2 class="">{{ equipment.name }}</h2>
             <span class="badge badge-secondary">{{ equipment.get_type_display }}</span>
             <p class="">({{ equipment.endpoint.code }}){{ equipment.endpoint }}: {{ equipment.location }}</p>
         </div>
 
-        <div class="clearfix px-5">
+        <div class="clearfix px-3">
             <a href="{% url 'equipment_update' equipment.id %}" type="button" class="btn btn-primary float-left">Редактировать</a>
             <button type="button" class="btn btn-danger float-right" data-toggle="modal" data-target="#equipment_detail_modal">Удалить</button>
         </div>
     </div>
 
-
-    <p></p><p></p>
-
+    <br>
 
                     <!-- Modal window for delete confirmation -->
                         <div class="modal fade" id="equipment_detail_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -45,5 +43,17 @@
                             </div>
                         </div>
                     <!-- End modal confirmation      -->
+
+
+    <div class="my-3 p-4 rounded shadow-lg">
+        <span class="bg-info p-2 rounded text-white">Количество портов: {{ equipment.ports.all|length }}</span>
+        <span class="bg-success p-2 rounded text-white">Свободно: {{ empty_port_count }}</span>
+        <!--    Piechart-->
+        {% if port_count > 0 %}
+            <div id="pie_chart" class="d-inline ml-5 pl-5">
+                <div class="pie animate" style="--p:{{ usage_percent }};--c:lightgreen"> Свободно {{ usage_percent }}%</div>
+            </div>
+        {% endif %}
+    </div>
 
 {% endblock %}

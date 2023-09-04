@@ -51,11 +51,12 @@
     <table class="table table-striped">
         <thead class="text-secondary">
             <th>&nbsp;&nbsp;&nbsp;</th>
-            <th>№ </th>
+            <th>№ П/П</th>
             <th>#ID </th>
             <th>Порт </th>
             <th>Тип </th>
             <th>Тип интерфейса</th>
+            <th>Рамка</th>
             <th>Связь</th>
             <th>Связанные порты</th>
             <th>&nbsp;&nbsp;&nbsp;</th>
@@ -75,7 +76,7 @@
                         </td>
                     {% endif %}
                     <td>
-                        {{ forloop.counter1 }}
+                        {{ forloop.counter }}
                     </td>
                     <td>
                         #{{ form.instance.id }}
@@ -89,6 +90,9 @@
                     </td>
                     <td>
                         {{ form.instance.interface_type }}
+                    </td>
+                    <td>
+                        {{ form.instance.frame_name }}
                     </td>
                     <td>
                         {% if form.instance.communication %}
@@ -265,7 +269,7 @@
                                 note,
                                 port_id,
                                 'csrfmiddlewaretoken': csrfToken,
-                                },                                              // получаем данные формы
+                                },
                         url: "{% url 'update_port' %}",
                         context: e.delegateTarget,                              // контекст - объект, к которому будет привязан ответ
                         // если успешно, то
@@ -281,18 +285,16 @@
                                 // $('#portEditModal').modal('show')
                             }
                             else {
-
                             }
                         },
-                        // если ошибка, то
                         error: function (response) {
-                            // предупредим об ошибке
                             console.log(response.responseJSON.errors)
                         }
                     });
                     return false;
                 })
             }
+
             function getCookie(name) {
               const value = `; ${document.cookie}`;
               const parts = value.split(`; ${name}=`);

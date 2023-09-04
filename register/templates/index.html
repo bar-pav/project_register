@@ -2,12 +2,35 @@
 
 {% block content %}
 
-<h1>Загрузка</h1>
-
-
-<h3>Всего оборудования: {{ all_equipments }}</h3>
 {% load static %}
-<div >
-    <img src="{% static 'images/img.jpg' %}" width="25%">
+
+
+
+<div class="d-flex flex-wrap my-4 shadow-lg p-3 mb-5 rounded">
+
+    <div class="card m-2 shadow" style="width: 18rem;">
+      <a href="{% url 'equipments' %}?t=E" class="">
+          <img class="card-img-top p-3" src="{% static 'images/icons/equipment_icon.png' %}" alt="Оборудование">
+      </a>
+      <div class="card-body">
+        <h5 class="card-title">Оборудование</h5>
+        <p class="card-text">Количество: {{ equipment_count }}</p>
+        <a href="{% url 'equipments' %}?t=E" class="btn btn-primary">Показать список</a>
+      </div>
+    </div>
+
+    <div class="card m-2 shadow" style="width: 18rem;">
+        <a href="{% url 'equipments' %}?t=O" class="">
+            <img class="card-img-top p-3" src="{% static 'images/icons/optical_frame_icon.png' %}" alt="Оптические кроссы">
+        </a>
+        <div class="card-body">
+            <h5 class="card-title">Оптические кроссы</h5>
+            <p class="card-text">Количество: {{ optical_frame_count }}</p>
+            <a href="{% url 'equipments' %}?t=O" class="btn btn-primary">Показать список</a>
+        </div>
+    </div>
+
 </div>
+
+
 {% endblock %}

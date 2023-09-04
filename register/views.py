@@ -7,24 +7,28 @@ from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import generic
 from django.urls import reverse, reverse_lazy
-from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
+from django.http import HttpResponseRedirect, HttpResponse
 
 
-from .models import Equipment, EndPoint, Consumer, Communication, Connection, Port
+from .models import Equipment, EndPoint, Consumer, Communication, Port
 from .forms import (
     # EndPointEditForm,
-                    ConnectionForm,
-                    CustomFormset,
-                    PortModelForm,
-                    # DeletePortForm,
-                    port_formset_factory,
-                    EndPointModelForm,
-                    ConsumerModelForm,
-                    EquipmentForm,
-                    PortInlineFormsetFactory,
-                    PortForm,
-                    CreatePortForm, OnePointConnectionForm,
-                    )
+    ConnectionForm,
+    CustomFormset,
+    # PortModelForm,
+    # DeletePortForm,
+    port_formset_factory,
+    EndPointModelForm,
+    ConsumerModelForm,
+    EquipmentForm,
+    PortInlineFormsetFactory,
+    PortForm,
+    CreatePortForm,
+    OnePointConnectionForm,
+    UploadFromFileForm,
+    )
+from .utils import CreateEquipment
+
 
 # Create your views here.
 
@@ -43,31 +47,35 @@ template_detail = {
     'Consumer': ConsumerModelForm,
 }
 
+
 def index(request):
-    # This view show equipments by their types.
-    equipments = []
-    type_choices = Equipment.type_choices
-    all_equipments = Equipment.objects.all().count()
-    for t in type_choices:
-        equipments.append((t[1], Equipment.objects.filter(type__exact=t[0]).count()))
+    equipment_count = Equipment.objects.filter(type__exact='E').count()
+    optical_frame_count = Equipment.objects.filter(type__exact='О').count()
     context = {
-        'all_equipments': all_equipments,
-        'equipments': equipments,
+        'equipment_count': equipment_count,
+        'optical_frame_count': optical_frame_count,
     }
     return render(request, 'index.html', context=context)
 
 
 def equipment_list(request):
+    if 't' in request.GET:
+        equipment_type = request.GET.get('t')
     equipments_by_type = {}
     equipments_count = 0
-    categories = Equipment.type_choices
+    categories = Equipment.type_choices.copy()
+    categories.pop()
     for category in categories:
         objects = Equipment.objects.filter(type__exact=category[0])
         equipments_by_type[category[1]] = (objects.all(), objects.count())
         equipments_count += objects.count()
+    active_tab = categories[0][1]
+    upload_form = UploadFromFileForm()
     context = {
         'equipments': equipments_by_type,
         'equipments_count': equipments_count,
+        'active_tab': active_tab,
+        'upload_form': upload_form,
     }
     return render(request, 'equipments.html', context=context)
 
@@ -100,8 +108,8 @@ class EquipmentCreateView(generic.edit.CreateView):
                 print('FORMSET ERRORS:', port_formset.errors)
                 print('CONTEXT DATA formset:', self.get_context_data()['ports'])
                 return render(self.request, 'equipment_create.html', self.get_context_data())
-            messages.add_message(self.request, message='TEST message.', level=messages.INFO)
             self.object = form.save()
+            messages.add_message(self.request, message=f"Добавлено '{self.object.name}'.", level=messages.SUCCESS)
             print('self.object', self.object)
             for port_form in port_formset:
                 port = port_form.save(commit=False)
@@ -111,10 +119,6 @@ class EquipmentCreateView(generic.edit.CreateView):
         return render(self.request, 'equipment_create.html', self.get_context_data())
 
     def form_invalid(self, form):
-        print('FORM INVALID')
-        print(form.errors)
-        print(self.get_context_data()['equipment_form'])
-
         return render(self.request, 'equipment_create.html', self.get_context_data())
 
 
@@ -122,6 +126,24 @@ class EquipmentUpdateView(generic.edit.UpdateView):
     model = Equipment
     context_object_name = 'equipment_form'
     fields = "__all__"
+    # TODO. For now this function use default template 'register/equipment_form.html'
+    # template_name = 'equipment_create.html'
+
+
+def upload_from_file(request):
+    if request.method == 'POST':
+        print('Upload function view -> request', request.FILES)
+        upload_form = UploadFromFileForm(request.POST, request.FILES)
+        print('Upload function view -> upload_form:', upload_form)
+
+        if upload_form.is_valid():
+            print('Valid form:')
+            # print_file(request.FILES['file'])
+            create_equipment = CreateEquipment(request.FILES['file'])
+            return HttpResponseRedirect(reverse('equipment_detail', args=[create_equipment.equipment.id]))
+        else:
+            print('Invalid form:')
+    return HttpResponse('OK')
 
 
 def equipment_delete(request, pk):
@@ -152,15 +174,20 @@ class EquipmentDetail(generic.DetailView):
     model = Equipment
     template_name = 'equipment_detail.html'
 
-    # def get_context_data(self, **kwargs):
-    #     ctx = super(EquipmentDetail, self).get_context_data(**kwargs)
-    #     ports = Equipment.objects.get(id=self.object.id).ports.all()
-    #     PortFormset = port_formset_factory(extra=len(ports))
-    #     create_port_form = PortForm()
-    #     port_formset = PortFormset(form_kwargs={'instances': ports})
-    #     ctx['port_formset'] = port_formset
-    #     ctx['create_port_form'] = create_port_form
-    #     return ctx
+    def get_context_data(self, **kwargs):
+        ctx = super(EquipmentDetail, self).get_context_data(**kwargs)
+        port_count = self.object.ports.count()
+        print(port_count)
+        empty_port_count = self.object.ports.filter(communication=None).count()
+        print(empty_port_count)
+        ctx['port_count'] = port_count
+        ctx['empty_port_count'] = empty_port_count
+        try:
+            ctx['usage_percent'] = '%.0d' % (empty_port_count / port_count * 100)
+        except ZeroDivisionError:
+            ctx['usage_percent'] = 0
+
+        return ctx
 
 
 def equipment_ports(request, pk):
@@ -228,6 +255,7 @@ def get_range(s):
 
 
 def get_port_name_range(name_range):
+    """ Возвращает название портов, если указан диапазон"""
     # re_result = re.findall(r'([a-zA-Z0-9а-яА-Я -_\\]+)(\{.+?\})?', name_range)
     re_result = re.findall(r'([a-zA-Z0-9а-яА-Я -_\\]+)(\{.+?})?', name_range)
     port_names = []
@@ -236,10 +264,11 @@ def get_port_name_range(name_range):
         boards = re_result.pop()
         board_name, board_range = boards[0], get_range(boards[1])
         ports = None
+        port_range = None
+        port_name = None
         if re_result:
             ports = re_result.pop()
             port_name, port_range = ports[0], get_range(ports[1])
-
         if board_range:
             for board in board_range:
                 if ports:
@@ -254,6 +283,7 @@ def get_port_name_range(name_range):
 
 
 def add_port(request, pk):
+    """ Функция добавляет новый порт к оборудованию по переданному индексу."""
     print('ADD PORT FUNCTION')
     equipment = None
     existed_ports_formset = None
@@ -281,12 +311,11 @@ def add_port(request, pk):
                 obj.save()
             except django.db.utils.IntegrityError:
                 messages.add_message(request, messages.INFO, f'Ports already exists')
-    # if request.method == "GET":
     return redirect('equipment_ports', pk=pk)
     # return render(request, 'equipment_detail_table.html', context=context)
 
 
-def delete_port_from_equipment(request, pk):
+def delete_port_from_equipment(request, pk):  # TODO на данный момент удаление реализовано с помощью formset для Port.
     if request.method == 'POST':
         form = PortForm(request)
         print(form.cleaned_data())
@@ -301,11 +330,8 @@ class EndPointDetailView(generic.DetailView):
     model = EndPoint
 
 
-
-
-
-
 def get_model_detail(request):
+    """ Общая функция представления для моделей 'EndPoint' и 'Consumer'. """
     print('get_model_detail > request:', request.GET)
     if request.method == 'GET':
         object_id = request.GET.get('object_id')
@@ -342,9 +368,10 @@ class ConsumerDetailView(generic.DetailView):
     model = Consumer
 
 
-def consumer_create_update(request, pk=None):
+def consumer_create_update(request, pk=None):  # TODO Сделать общую функцию с 'endpoint_create_update'
     title = 'Create Consumer'
     prev_page = request.GET['next'] if 'next' in request.GET else ''
+    form = None
 
     if request.method == 'POST':
         if pk:
@@ -360,7 +387,6 @@ def consumer_create_update(request, pk=None):
             # if prev_page:
             #     return HttpResponseRedirect(prev_page)
             return HttpResponseRedirect(reverse('consumer_detail', args=[str(pk)]))
-
         # else:
         #     # return render(request, 'register/consumer_edit.html', {'form': form, 'title': ''})
     elif request.method == 'GET':
@@ -388,7 +414,7 @@ def consumer_create_update(request, pk=None):
 def endpoint_create_update(request, pk=None, model=None):
     title = 'Create Endpoin'  # mutual
     prev_page = request.GET['next'] if 'next' in request.GET else ''
-
+    form = None
     if request.method == 'POST':
         if pk:
             record = models[model].objects.get(pk=pk)
@@ -465,6 +491,7 @@ class CommunicationCreateView(generic.edit.CreateView):
 
 
 class CommunicationUpdateView(generic.edit.UpdateView):
+    """ Class UpdateView для обновления записи 'Communication'."""
     model = Communication
     fields = "__all__"
     
@@ -477,11 +504,8 @@ class CommunicationDeleteView(generic.edit.DeleteView):
     success_url = reverse_lazy('communications')
 
 
-def communication_delete_view(request, pk):
-    print('request:', request.GET)
-    # communication = get_object_or_404(Communication, pk=pk)
-    # communication.ports.clear()
-    # communication.delete()
+def communication_delete(request, pk=None):
+    """ Из AJAX получаем id связей в виде строки с разделителем '$', которые нужно удалить. """
     to_delete = request.GET.get('to_delete')
     print('to_delete:', to_delete)
     print(to_delete.split('$'))
@@ -489,6 +513,7 @@ def communication_delete_view(request, pk):
     if to_delete:
         success = []
         error = []
+        communication = None
         for comm_id in to_delete:
             try:
                 communication = get_object_or_404(Communication, pk=comm_id)
@@ -499,7 +524,6 @@ def communication_delete_view(request, pk):
                 error.append(communication.name)
             else:
                 success.append(communication.name)
-
         if success:
             messages.add_message(request, messages.SUCCESS,
                                  f"Записи '{','.join(success)}' успешно удалены.")
@@ -514,23 +538,15 @@ def communication_delete_view(request, pk):
                'model': 'Communication'}
     return render(request, 'communications_table.html', context=context)
 
-    # return reverse('communications')
-
-
-
 
 def objects_list_view(request, model):
 
     objects = models[model].objects.all()
 
     context = {'objects': objects,
-               'title': models[model].get_model_name(),
+               'title': models[model].get_model_name(plural=True),
                'model': model}
     return render(request, 'list_view.html', context=context)
-
-
-
-
 
 
 def connection_form_view(request):
@@ -573,7 +589,8 @@ def connections_delete(request, pk):
 # ------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------
 def connection_edit(request, pk):
-    """ This view is render set of forms, each of that corresponds to one port from connection set in Connection model.
+    """ OLD VERSION!
+    This view is render set of forms, each of that corresponds to one port from connection set in Connection model.
         _______________________________________________________________________________
         station                    | line                      | communication
         -------------------------------------------------------------------------------
@@ -588,44 +605,37 @@ def connection_edit(request, pk):
         Form set implemented as 'CustomFormset'.
         One Port form is instance of 'PortModelForm'.
     """
-    communication = Communication.objects.get(pk=pk)  # Получение записи, для которой выводится список коннекций.
-    connection_ports = get_port_set_for_communication(communication)
-    my_formset = None
-    if request.method == "GET":
-        my_formset = CustomFormset(PortModelForm,
-                                   request.POST,
-                                   initial_data={'equipment': [port.equipment.id for port in connection_ports],
-                                                 'port_name': [port.id for port in connection_ports]},
-                                   )
-        # ports = initial_data['port_name']
-        # forms_port = []
-        # for i in ports:
-        #     forms_port.append(PMF(instance=i))
-    if request.method == 'POST':
-        my_formset = CustomFormset(PortModelForm, request.POST)
-        my_formset.cath_action_with_form()
-        # print("connection_edit > POST catch action.", my_formset)
-        if my_formset.is_submit:
-            print('cleaned: ', my_formset.cleaned_data())
-            initial_data = get_port_set_for_communication(communication)
-            new_data = []
-            for form_data in my_formset.cleaned_data():
-                new_data.append(form_data['port_name'])
-
-            print(initial_data)
-            print(new_data)
-            if len(initial_data) != len(new_data):
-                print('Is changed. Length not equal.')
-            print('has changed:', initial_data != new_data)
-            # print('has_changed: ', my_formset.has_changed())
-
-    context = {
-        'communication': communication,
-        'formset': my_formset,
-        'num_forms': len(my_formset),
-        # 'ports': forms_port,
-    }
-    return render(request, 'connection_edit.html', context=context)
+    pass
+    # communication = Communication.objects.get(pk=pk)  # Получение записи, для которой выводится список коннекций.
+    # connection_ports = get_port_set_for_communication(communication)
+    # my_formset = None
+    # if request.method == "GET":
+    #     my_formset = CustomFormset(PortModelForm,
+    #                                request.POST,
+    #                                initial_data={'equipment': [port.equipment.id for port in connection_ports],
+    #                                              'port_name': [port.id for port in connection_ports]},
+    #                                )
+    # if request.method == 'POST':
+    #     my_formset = CustomFormset(PortModelForm, request.POST)
+    #     my_formset.cath_action_with_form()
+    #     # print("connection_edit > POST catch action.", my_formset)
+    #     if my_formset.is_submit:
+    #         print('cleaned: ', my_formset.cleaned_data())
+    #         initial_data = get_port_set_for_communication(communication)
+    #         new_data = []
+    #         for form_data in my_formset.cleaned_data():
+    #             new_data.append(form_data['port_name'])
+    #         print(initial_data)
+    #         print(new_data)
+    #         if len(initial_data) != len(new_data):
+    #             print('Is changed. Length not equal.')
+    #         print('has changed:', initial_data != new_data)
+    # context = {
+    #     'communication': communication,
+    #     'formset': my_formset,
+    #     'num_forms': len(my_formset),
+    # }
+    # return render(request, 'connection_edit.html', context=context)
 
 
 # def get_ports(request):
@@ -661,23 +671,14 @@ def connection_edit(request, pk):
 #     #     return render(request, 'connection_edit_ajax_response.html', context=context)def get_ports(request):
 #
 
-
-
 def get_ports_test(request):
+    """ Получает данные из AJAX запроса для формы выбора порта. """
     print('request GET:', request.GET)
     endpoint_id = request.GET.get('endpoint')
     equipment_type = request.GET.get('equipment_type')
     equipment_id = request.GET.get('equipment')
     form_index = request.GET.get('id').split('_')[1]
     communication_type = request.GET.get('communication_type')
-
-    # form = OnePointConnectionForm(request.POST)
-    # print('equipment_type:', equipment_type, bool(equipment_type))
-    # print('CHANGED DATA:', form.changed_data)
-
-    # print('get_ports > request:', request, endpoint_id, equipment_type, equipment_id, form_index)
-    # port_name = [int(port_id) for port_id in request.GET.get('port_name').split(',') if port_id]
-    # print('port_name ajax:', port_name)
     if request.method == 'GET':
         form = OnePointConnectionForm(initial={'endpoint': endpoint_id,
                                                'equipment_type': equipment_type,
@@ -694,17 +695,6 @@ def get_ports_test(request):
             'form': form
         }
         return render(request, 'connection_edit_ajax_response.html', context=context)
-    # else:
-    #     print('get_ports > request > equipment:', request.GET.get('equipment'))
-    #
-    #     form = PortModelForm(initial={'equipment': None},
-    #                          auto_id=CustomFormset.get_auto_id(field_id))
-    #     print('NO EQUIPMENT')
-    #     context = {
-    #         'form': [form, field_id]
-    #     }
-    #     return render(request, 'connection_edit_ajax_response.html', context=context)
-
 
 
 def is_ports_empty(ports):
@@ -772,8 +762,8 @@ def connection_edit_with_filter(request, pk):
                             ports[port].save()
                             ports[next_port].save()
                     return redirect('communication_detail', pk=communication.id)
-                else:
-                    messages.add_message(request, messages.ERROR, f'Порты "{busy_ports(ports)}" заняты.')
+                # else:
+                #     messages.add_message(request, messages.ERROR, f'Порт "{busy_ports(ports)}" занят.')
 
     context = {
         'communication': communication,
@@ -786,7 +776,7 @@ def connection_edit_with_filter(request, pk):
 def search_communication(request):
     search = request.GET.get('search').strip()
     if search:
-        communications = Communication.objects.filter(Q(name__icontains=search) | Q(name__exact=search) | Q(direction_from__name__icontains=search) | Q(direction_to__name__icontains=search))
+        communications = Communication.objects.filter(Q(name__icontains=search) | Q(name__exact=search) | Q(direction_from__name__icontains=search) | Q(direction_to__name__icontains=search) | Q(direction_from__code__iexact=search) | Q(direction_to__code__iexact=search))
     else:
         communications = Communication.objects.all()
     context = {

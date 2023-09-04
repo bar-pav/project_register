@@ -69,7 +69,7 @@
                             'equipment': get_value(e.target, 'equipment'),
                     //        'equipment': e.target.value,
                             'id': e.target.attributes.id.value,
-                            'communication_type': {{ formset.communication_type.id }},
+                            'communication_type': '{{ formset.communication_type.id }}',
                             },                                              // получаем данные формы
                     url: "{% url 'get_ports_test' %}",
                     context: e.delegateTarget,

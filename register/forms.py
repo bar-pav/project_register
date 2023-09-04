@@ -30,11 +30,14 @@ class EquipmentForm(forms.ModelForm):
         self.fields['endpoint_opposite'].widget.attrs['class'] = 'form-control'
 
 
+class UploadFromFileForm(forms.Form):
+    file = forms.FileField()
+
 
 class PortForm(forms.ModelForm):
     class Meta:
         model = Port
-        fields = ['port_name', 'interface_type', 'media_type', 'note']
+        fields = ['port_name', 'interface_type', 'media_type', 'note', 'frame_name']
 
 
 class CreatePortForm(PortForm):
@@ -49,11 +52,13 @@ class CreatePortForm(PortForm):
         self.fields['interface_type'].label = 'Тип интерфейса'
         self.fields['media_type'].widget.attrs['class'] = 'form-control'
         self.fields['media_type'].label = 'Тип сигнала'
+        self.fields['frame_name'].widget.attrs['class'] = 'form-control'
+        self.fields['frame_name'].label = 'Рамка'
         print()
 
 
 class PortDetailForm(forms.Form):
-    # porn_name = forms.CharField(max_length=20)
+    porn_name = forms.CharField(max_length=20)
 
     def __init__(self, instance, *args, **kwargs):
         self.instance = instance
@@ -64,6 +69,7 @@ class PortBaseFormSet(forms.BaseFormSet):
 
     def get_form_kwargs(self, index):
         form_kwargs = super(PortBaseFormSet, self).get_form_kwargs(index)
+        port_instance = None
         try:
             port_instance = form_kwargs['instances'].all()[index]
         except IndexError:
@@ -76,18 +82,6 @@ PortInlineFormsetFactory = inlineformset_factory(Equipment, Port, form=CreatePor
 
 def port_formset_factory(extra=None):
     return formset_factory(PortDetailForm, formset=PortBaseFormSet, can_delete=True, extra=extra)
-
-
-# class EndPointEditForm(forms.Form):
-#     endpoint_name = forms.CharField(max_length=100, help_text="Maximum 100 characters.")
-#
-#     def clean_endpoint_name(self):
-#         name = self.cleaned_data['endpoint_name']
-#
-#         if not name:
-#             raise forms.ValidationError("Field can't be empty.")
-#
-#         return name
 
 
 class EndPointModelForm(forms.ModelForm):
@@ -174,20 +168,11 @@ class OnePointConnectionForm(forms.Form):
         self.reserved_ports = reserved_ports
         self.communication_type = communication_type
         print('reserved ports', self.reserved_ports)
-        # self.fields['endpoint'].queryset = endpoint_set or EndPoint.objects.all()
-        # self.fields['equipment'].queryset = equipment_set or self.get_queryset(Equipment, 'equipment')  # , filter=['endpoint', 'type']
-        # self.fields['port_name'].queryset = port_set or self.get_queryset(Port, 'port_name')
         self.get_querysets()
         self.fields['endpoint'].widget.attrs.update({'class': 'filter form-control'})
         self.fields['equipment_type'].widget.attrs.update({'class': 'filter form-control'})
         self.fields['equipment'].widget.attrs.update({'class': 'filter form-control'})
         self.fields['port'].widget.attrs.update({'class': 'form-control'})
-
-        # self.fields['equipment'].widget.attrs['class'] = 'form-control'
-        # self.fields['port'].widget.attrs['class'] = 'form-control'
-
-        # print('FIELDS:', self.fields['equipment'].__dict__)
-
 
     def get_querysets(self):
         endpoint = self.initial.get('endpoint') or self.data.get('endpoint')
@@ -195,7 +180,6 @@ class OnePointConnectionForm(forms.Form):
         equipment = self.initial.get('equipment') or self.data.get('equipment')
         port = self.initial.get('port') or self.data.get('port')
 
-        from itertools import chain
         if port:
             # ports = Port.objects.filter(equipment=equipment)
             ports = Port.objects.filter(equipment=equipment).exclude(~Q(pk=port) & Q(communication=None) & Q(connected_to=None))
@@ -216,34 +200,14 @@ class OnePointConnectionForm(forms.Form):
                 if equipment:
                     # ports = Port.objects.filter(equipment=equipment).filter(connected_to=None).filter(communication=None)
                     print('commun type:', self.communication_type)
-                    ports = Port.objects.filter(equipment=equipment).filter(Q(connected_to__equipment__type='F') | Q(connected_to=None)).filter(communication=None).filter(interface_type=self.communication_type)
+                    ports = Port.objects.filter(equipment=equipment).filter(Q(connected_to__equipment__type='F') | Q(connected_to=None)).filter(communication=None)
+                    if self.communication_type:
+                        ports = ports.filter(interface_type=self.communication_type)
 
         self.fields['endpoint'].queryset = endpoints
         self.fields['equipment_type'].choices = type_choices
         self.fields['equipment'].queryset = equipments
         self.fields['port'].queryset = ports
-
-
-
-
-        # if equipment:
-        #     ports = Port.objects.filter(equipment=equipment)
-        #     equipment = Equipment.objects.filter(type=equipment_type).filter(endpoint=endpoint)
-        # elif equipment_type:
-        #     equipment = Equipment.objects.filter(type=equipment_type).filter(endpoint=endpoint)
-        # else:
-        #     pass
-        # exclude_ports = self.reserved_ports
-        # # print('exclude_ports', exclude_ports)
-        # print('------______----____---___:', port_name)
-        # if equipment_id and port_name:
-        #     return Port.objects.filter(id=port_name).all()
-        # if equipment_id:
-        #     return Port.objects.filter(equipment__exact=equipment_id).filter(communication__isnull=True).filter(
-        #         connected_to=None).filter(connected_from=None).all()
-        # else:
-        #     return Port.objects.none()
-        # return model.objects.all()
 
     def clean_port_name(self):
         port_name = self.cleaned_data['port']

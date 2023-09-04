@@ -2,7 +2,6 @@
 
 {% block content %}
 
-
     <div class="clearfix mx-5 mt-5 mb-2">
         <p class="h3 float-left">{{ title }}</p>
         {% if model == "EndPoint" %}
@@ -26,7 +25,7 @@
             {% for object in objects %}
                 <tr>
                     <td data-object_id="{{ object.id }}">{{ forloop.counter }}</td>
-                    <td data-object_id="{{ object.id }}">{{ object.id }}</td>
+                    <td data-object_id="{{ object.id }}">#{{ object.id }}</td>
                     {% if object.code %}
                         <td data-object_id="{{ object.id }}">{{ object.code }}</td>
                     {% endif %}

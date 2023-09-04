@@ -2,25 +2,56 @@
 
 {% block content %}
 
-<h1>Оборудование</h1>
 
 
-<h3>Всего оборудования: {{ equipments_count }}</h3>
+    <div class="clearfix">
+        <div class="d-inline float-left">
+            <p class="h1">Объекты</p>
+            <p class="h5">Всего объектов: {{ equipments_count }}</p>
+        </div>
+        <div class="d-inline float-right my-3">
+            <a href="{% url 'equipment_create' %}" class="d-block btn btn-success">Добавить оборудование</a>
+            <span class="d-flex justify-content-center text-muted">or</span>
 
-<p>Из них:</p>
-<ul>
-    {% for category, value in equipments.items %}
-        <li>{{ category }} ({{value.1}}):
-            <ul>
-                {% for equipment in value.0 %}
-                    <li><a href="{% url 'equipment_detail' equipment.id %}">{{ equipment }}</a></li>
-                {% endfor %}
-            </ul>
-        </li>
+            <form method="POST" enctype="multipart/form-data" action="{% url 'upload_from_file' %}" class="d-block ">{% csrf_token %}
+                <div class="input-group">
+                    <div class="custom-file">
+<!--                        <input type="file" name="file" class="custom-file-input" id="inputGroupFile" aria-describedby="inputGroupFileAddon" lang="ru">-->
+<!--                        <label class="custom-file-label" for="inputGroupFile">Добавить из файла</label>-->
+                            {{ upload_form.as_div }}
+                    </div>
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="submit" id="inputGroupFileAddon">Отправить</button>
+                    </div>
+                </div>
 
-    {% endfor %}
-</ul>
+            </form>
 
-<a href="{% url 'equipment_create' %}">Добавить оборудование</a>
+        </div>
+    </div>
+
+
+
+    <nav>
+        <div class="nav nav-tabs mx-5 mt-3" id="nav-tab" role="tablist">
+            {% for category, value in equipments.items %}
+                <a class="nav-item nav-link {% if active_tab == category %}active{% endif %}" id="nav-{{ category }}-tab" data-toggle="tab" href="#nav-{{ category}}" role="tab" aria-controls="nav-home" aria-selected="true">{{ category }} <span class="badge badge-info">{{value.1}}</span></a>
+            {% endfor %}
+        </div>
+    </nav>
+
+    <div class="tab-content mx-5 pt-4" id="nav-tabContent">
+        {% for category, value in equipments.items %}
+            <div class="tab-pane fade show {% if active_tab == category %}active{% endif %}" id="nav-{{ category }}" role="tabpanel" aria-labelledby="nav-home-tab">
+                <ul>
+                    {% for equipment in value.0 %}
+                        <li><a href="{% url 'equipment_detail' equipment.id %}">{{ equipment }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
+    </div>
+
+
 
 {% endblock %}

@@ -2,15 +2,15 @@
 
 {% block content %}
 
-<h1>{{ equipment.name }}<sub>    ({{ equipment.get_type_display }})</sub></h1>
+    <div class="container my-3 p-3 rounded shadow-lg">
 
+        <h1>{{ equipment.name }}<sub>    ({{ equipment.get_type_display }})</sub></h1>
+        <p>Location: {{ equipment.location }}</p>
+        <a href="{% url 'equipment_update' equipment.id %}" type="button" class="btn btn-primary">Edit</a>
+        <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#exampleModal">Delete</button>
 
-<p>Location: {{ equipment.location }}</p>
+    </div>
 
-<a href="{% url 'equipment_update' equipment.id %}" type="button" class="btn btn-primary">Edit</a>
-<button type="button" class="btn btn-danger" data-toggle="modal" data-target="#exampleModal">
-                                        Delete
-                                    </button>
                                     <!-- Modal -->
                                     <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                         <div class="modal-dialog" role="document">

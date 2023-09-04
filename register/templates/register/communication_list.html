@@ -24,29 +24,21 @@
 <script>
             $(document).ready(
                 $('#search').on('input', (e) => {
-                    console.log(e.target.value)
                     $.ajax({
                         data: {
                                 'search': e.target.value,
-                                },                                              // получаем данные формы
+                                },
                         url: "{% url 'search_communication' %}",
                         context: e.delegateTarget,
-                        // если успешно, то
                         success: function (response) {
-                                console.log(response)
-                                console.log('this = ', $(this))
-
                             if (response) {
-                                console.log($(this))
                                 $('#table_container').html(response);
                             }
                             else {
-
+                                console.log('THere is no content.')
                             }
                         },
-                        // если ошибка, то
                         error: function (response) {
-                            // предупредим об ошибке
                             console.log(response.responseJSON.errors)
                         }
                     });
@@ -57,66 +49,60 @@
 
 
 
-<script>
-        $('#delete_form_submit').hide();
-        $('#unselect').hide();
-        $(document).ready($(document).on('click', (e)=>{
-            for(i = 0; i < $("input[type='checkbox']").length; i++)
-                {
-                    if ($("input[type='checkbox']")[i].checked)
-                        {
-                            $("#delete_form_submit").show();
-                            $('#unselect').show();
-                            return;
-                        }
-                }
-            $("#delete_form_submit").hide();
+        <script>
+            $('#delete_form_submit').hide();
             $('#unselect').hide();
+            $(document).ready($(document).on('click', (e)=>{
+                for(i = 0; i < $("input[type='checkbox']").length; i++)
+                    {
+                        if ($("input[type='checkbox']")[i].checked)
+                            {
+                                $("#delete_form_submit").show();
+                                $('#unselect').show();
+                                return;
+                            }
+                    }
+                $("#delete_form_submit").hide();
+                $('#unselect').hide();
 
-            })
-        )
-        $(document).ready($('#unselect').on('click', (e)=>{
-            e.preventDefault();
-            for(i = 0; i < $("input[type='checkbox']").length; i++)
-                {
-                    $("input[type='checkbox']")[i].checked = false;
-                }
-            $("#delete_form_submit").hide();
-            $('#unselect').hide();
-            })
-        )
+                })
+            )
+            $(document).ready($('#unselect').on('click', (e)=>{
+                e.preventDefault();
+                for(i = 0; i < $("input[type='checkbox']").length; i++)
+                    {
+                        $("input[type='checkbox']")[i].checked = false;
+                    }
+                $("#delete_form_submit").hide();
+                $('#unselect').hide();
+                })
+            )
 
-        $(document).ready($('#delete_form_submit').on('click', (e)=>{
-            e.preventDefault();
-            let to_delete = [];
-            $("input[type='checkbox']").each(function(i, elem)
-                {
-                    if($(elem).is(':checked')){
-                        to_delete.push($(elem).data('communication_id'))
-                    };
-                });
-            $("#delete_form_submit").hide();
-            $('#unselect').hide();
-            $.ajax({
+            $(document).ready($('#delete_form_submit').on('click', (e)=>{
+                e.preventDefault();
+                let to_delete = [];
+                $("input[type='checkbox']").each(function(i, elem)
+                    {
+                        if($(elem).is(':checked')){
+                            to_delete.push($(elem).data('communication_id'))
+                        };
+                    });
+                $("#delete_form_submit").hide();
+                $('#unselect').hide();
+                $.ajax({
                         data: {
                                 to_delete: to_delete.join('$'),
-                                },                                              // получаем данные формы
-                        url: "{% url 'communication_delete' 65 %}",
+                                },
+                        url: "{% url 'communication_delete' None %}",
                         context: e.delegateTarget,
-                        // если успешно, то
                         success: function (response) {
-                            console.log(response)
-
                             if (response) {
                                 $('#table_container').html(response)
                             }
                         },
                     });
-
-
-            })
-        )
-
+                })
+            )
     </script>
 
 

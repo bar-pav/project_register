@@ -10,13 +10,13 @@ class PortTypeMismatch(Exception):
 
 class Equipment(models.Model):
     type_choices = [
+        ('E', 'Оборудование'),
+        ('O', 'Оптические кроссы'),
+        ('F', 'Рамки'),
+        ('V', 'Виртуальные объекты'),
+        ('S', 'Системы'),
+        ('-', 'Другое'),
         ('', '---------'),
-        ('-', 'other'),
-        ('E', 'equipment'),
-        ('O', 'optical frame'),
-        ('F', 'electrical frame'),
-        ('V', 'virtual object'),
-        ('S', 'system'),
     ]
 
     name = models.CharField(max_length=100)
@@ -25,7 +25,7 @@ class Equipment(models.Model):
     note = models.TextField(null=True, blank=True)
     type = models.CharField(max_length=1, choices=type_choices, default='-')
 
-    endpoint_opposite = models.ForeignKey('EndPoint', on_delete=models.RESTRICT, default=None, null=True, related_name='systems')
+    endpoint_opposite = models.ForeignKey('EndPoint', on_delete=models.RESTRICT, default=None, null=True, blank=True, related_name='systems')
 
     def get_absolute_url(self):
         return reverse('equipment_detail', args=[str(self.id)])
@@ -57,8 +57,10 @@ class Port(models.Model):
     media_type = models.CharField(max_length=1, choices=media_type_choices, default='E')
     port_name = models.CharField(max_length=30, blank=True)
     note = models.TextField(null=True, blank=True)
+    frame_name = models.CharField(max_length=30, blank=True)  # Информация о рамке, на которой расшит порт (вместо frame с OneToOneField).
 
     connected_to = models.OneToOneField('Port', on_delete=models.RESTRICT, related_name='connected_from', blank=True, null=True)
+    frame = models.OneToOneField('Port', on_delete=models.RESTRICT, related_name='port', blank=True, null=True)
     communication = models.ForeignKey('Communication', on_delete=models.RESTRICT, null=True, blank=True, related_name='ports')
 
     def __str__(self):
@@ -139,7 +141,10 @@ class Communication(models.Model):
         unique_together = ('name', 'direction_from', 'direction_to', 'consumer', 'communication_type')
 
     def __str__(self):
-        return f"Communication '{self.name}': 'from {self.direction_from} - to {self.direction_to}'"
+        return f"{self.name} (#{self.id})"
+
+    def __repr__(self):
+        return f"Communication({self.name}, {self.note}, {self.direction_from}, {self.direction_to}, {self.consumer}, {self.communication_type},"
 
     def get_absolute_url(self):
         return reverse('communication_detail', args=[str(self.id)])
