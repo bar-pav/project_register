@@ -25,7 +25,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(os.environ.get('DEBUG', True))
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'projectregister.by']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'projectregister.by', 'projectr.vh114.hosterby.com']
 
 
 # Application definition

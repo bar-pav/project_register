@@ -54,15 +54,13 @@
 
                 {% for port in communication.ports.all %}
 
-                    {% if not forloop.first %}
                         {% if port.frame_name %}
-
 
                     <div class="card my-2 shadow-lg" style="width: 15rem;">
                         <div class="card-body bg-light">
                             <h5 class="card-title bg-secondary p-3 rounded">{{ port.equipment }}</h5>
                             <h6 class="card-subtitle mb-2 text-muted"></h6>
-                            <p class="card-text">Порт: {{ port.frame_name }}</p>
+                            <p class="card-text text-muted">Рамка {{ port.frame_name }} (Порт оборудования: {{ port.port_name }})</p>
                             <a href="#" class="card-link"></a>
                             <a href="#" class="card-link"></a>
                         </div>
@@ -75,12 +73,11 @@
                             </div>
                         </div>
                         {% endif %}
-                    {% endif %}
 
                     <div class="card my-2 shadow-lg" style="width: 15rem;">
                         <div class="card-body bg-light">
                             <h5 class="card-title bg-{% if port.equipment.type == 'E' %}primary{% elif port.equipment.type == 'F' %}info{% else %}light{% endif %} p-3 rounded">{{ port.equipment }}</h5>
-                            <h6 class="card-subtitle mb-2 text-muted">Тип: {{ port.equipment.get_type_display }}</h6>
+                            <h6 class="card-subtitle mb-2 text-muted">{{ port.equipment.get_type_display }}</h6>
                             <p class="card-text">Порт: {{ port.get_port_name }}</p>
                             <a href="#" class="card-link"></a>
                             <a href="#" class="card-link"></a>

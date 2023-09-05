@@ -50,7 +50,7 @@ template_detail = {
 
 def index(request):
     equipment_count = Equipment.objects.filter(type__exact='E').count()
-    optical_frame_count = Equipment.objects.filter(type__exact='О').count()
+    optical_frame_count = Equipment.objects.filter(type__exact='O').count()
     context = {
         'equipment_count': equipment_count,
         'optical_frame_count': optical_frame_count,
@@ -59,8 +59,6 @@ def index(request):
 
 
 def equipment_list(request):
-    if 't' in request.GET:
-        equipment_type = request.GET.get('t')
     equipments_by_type = {}
     equipments_count = 0
     categories = Equipment.type_choices.copy()
@@ -70,6 +68,9 @@ def equipment_list(request):
         equipments_by_type[category[1]] = (objects.all(), objects.count())
         equipments_count += objects.count()
     active_tab = categories[0][1]
+    if 't' in request.GET:
+        active_tab = request.GET.get('t')
+        print(active_tab)
     upload_form = UploadFromFileForm()
     context = {
         'equipments': equipments_by_type,
@@ -411,8 +412,8 @@ def consumer_create_update(request, pk=None):  # TODO Сделать общую 
     return render(request, 'register/consumer_edit.html', {'form': form, 'title': title})
 
 
-def endpoint_create_update(request, pk=None, model=None):
-    title = 'Create Endpoin'  # mutual
+def consumer_endpoint_create_update(request, pk=None, model=None):
+    title = f'Новый {models[model].get_model_name()}'  # mutual
     prev_page = request.GET['next'] if 'next' in request.GET else ''
     form = None
     if request.method == 'POST':
@@ -444,11 +445,11 @@ def endpoint_create_update(request, pk=None, model=None):
             else:
                 messages.add_message(request, messages.SUCCESS,
                                      f"Запись '{record.name}' успешно удалена.")
-            return redirect(f'{model.lower()}')
+            return redirect(f'{model.lower()}s')
         if pk:
             record = models[model].objects.get(pk=pk)
             form = forms[model](instance=record)
-            title = f'Edit {model}'
+            title = f'Редактировать {record.name}'
             print('Uses form with instance', pk)
         else:
             print('Uses form without instance', pk)

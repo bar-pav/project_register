@@ -2,65 +2,66 @@
 
 {% block content %}
 
-<h3>Добавить новое оборудование</h3>
+<div class="shadow rounded m-3 p-3">
+        <h3>Добавить новое оборудование</h3>
 
-<form id="myForm" method="post">
-    {% csrf_token %}
+        <form id="myForm" method="post">
+            {% csrf_token %}
 
-    {% if equipment_form %}
-        <div class="form-group">
-            <input type="text" name="name" id="id_name" class="form-control {% if equipment_form.name.errors %}is-invalid{% endif %}" placeholder="{{ equipment_form.name.label }}" value="{% if equipment_form.name.value %}{{ equipment_form.name.value }}{% endif %}">
-            {% if equipment_form.name.errors %}
-                <div class="invalid-feedback">
-                    {{ equipment_form.name.errors }}
+            {% if equipment_form %}
+                <div class="form-group">
+                    <input type="text" name="name" id="id_name" class="form-control {% if equipment_form.name.errors %}is-invalid{% endif %}" placeholder="{{ equipment_form.name.label }}" value="{% if equipment_form.name.value %}{{ equipment_form.name.value }}{% endif %}">
+                    {% if equipment_form.name.errors %}
+                        <div class="invalid-feedback">
+                            {{ equipment_form.name.errors }}
+                        </div>
+                    {% endif %}
                 </div>
-            {% endif %}
-        </div>
-        <div class="form-group">
-            <label class="">{{ equipment_form.type.label }}</label>
-            {{ equipment_form.type }}
-        </div>
-        <div class="form-group">
-            <label class="">{{ equipment_form.endpoint.label }}</label>
-            {{ equipment_form.endpoint }}
-            {% if equipment_form.endpoint.errors %}
-                <div class="invalid-feedback">
-                    {{ equipment_form.endpoint.errors }}
+                <div class="form-group">
+                    <label class="">{{ equipment_form.type.label }}</label>
+                    {{ equipment_form.type }}
                 </div>
-            {% endif %}
-        </div>
-        <div class="form-group">
-            <input type="text" name="location" id="id_location" class="form-control {% if equipment_form.location.errors %}is-invalid{% endif %}" placeholder="{{ equipment_form.location.label }}" value="{% if equipment_form.location.value %}{{ equipment_form.location.value }}{% endif %}">
-            {% if equipment_form.location.errors %}
-                <div class="invalid-feedback">
-                    {{ equipment_form.location.errors }}
+                <div class="form-group">
+                    <label class="">{{ equipment_form.endpoint.label }}</label>
+                    {{ equipment_form.endpoint }}
+                    {% if equipment_form.endpoint.errors %}
+                        <div class="invalid-feedback">
+                            {{ equipment_form.endpoint.errors }}
+                        </div>
+                    {% endif %}
                 </div>
-            {% endif %}
-        </div>
-        <div class="form-group mt-5">
-            <label class="">{{ equipment_form.endpoint_opposite.label }}</label>
-            {{ equipment_form.endpoint_opposite }}
-            {% if equipment_form.endpoint_opposite.errors %}
-                <div class="invalid-feedback">
-                    {{ equipment_form.endpoint_opposite.errors }}
+                <div class="form-group">
+                    <input type="text" name="location" id="id_location" class="form-control {% if equipment_form.location.errors %}is-invalid{% endif %}" placeholder="{{ equipment_form.location.label }}" value="{% if equipment_form.location.value %}{{ equipment_form.location.value }}{% endif %}">
+                    {% if equipment_form.location.errors %}
+                        <div class="invalid-feedback">
+                            {{ equipment_form.location.errors }}
+                        </div>
+                    {% endif %}
                 </div>
-            {% endif %}
-        </div>
+                <div class="form-group mt-5">
+                    <label class="">{{ equipment_form.endpoint_opposite.label }}</label>
+                    {{ equipment_form.endpoint_opposite }}
+                    {% if equipment_form.endpoint_opposite.errors %}
+                        <div class="invalid-feedback">
+                            {{ equipment_form.endpoint_opposite.errors }}
+                        </div>
+                    {% endif %}
+                </div>
 
-    {% endif %}
+            {% endif %}
+</div>
 
+<div class="shadow rounded m-3 p-3">
 
     <h4>Добавить порты</h4>
 
-    <div class="px-5">
-        <div class="card">
-                <div class="card card-body">
-                    <div class="form-group px-5">
+    <div class="px-0">
                             <table class="table">
                                 <thead>
-                                    <th>Port name</th>
-                                    <th>Type</th>
-                                    <th>Media type</th>
+                                    <th>Порт</th>
+                                    <th>Тип</th>
+                                    <th>Тип интерфейса</th>
+                                    <th>Рамка</th>
                                     <th></th>
                                 </thead>
                                 <tbody id="port-fields">
@@ -71,9 +72,6 @@
                                         {% endfor %}
                                 </tbody>
                             </table>
-                    </div>
-                </div>
-        </div>
     </div>
 
 
@@ -95,6 +93,7 @@
 
 </form>
 
+</div>
 <script type="text/html" id="port_template">
     <div id="id_{{ port_formset.prefix }}-__prefix__">
         {{ ports.empty_form }} <button type="button" class="btn remove">remove</button>
