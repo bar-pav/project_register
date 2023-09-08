@@ -31,6 +31,7 @@ urlpatterns = [
     path('connection_form', views.connection_form_view, name='connection_form'),
     path('communication/<pk>/connections_delete', views.connections_delete, name='connections_delete'),
     path('communication/<pk>/connection_edit_with_filter', views.connection_edit_with_filter, name='connection_edit_with_filter'),
+    path('communication/<pk>/connection_edit_v2', views.connection_edit_v2, name='connection_edit_v2'),
 
     # AJAX requests URLs
     path('get_ports_for_equipment_test', views.get_ports_test, name='get_ports_test'),

@@ -9,6 +9,44 @@ span.logo {
     color: green;
 }
 
+
+
+
+.card {
+    width: 15rem;
+}
+
+.card-delete {
+    width: 0px;
+    height: 0px;
+    opacity: 0;
+    scale: 0;
+    transition: all 500ms ease;
+
+}
+
+
+.between-filler {
+    width: 2rem;
+    position:relative;
+    transition: all 500ms ease;
+    opacity: 0.1;
+    transition: all 500ms ease;
+}
+
+.between-filler:hover {
+    width: 4rem;
+    opacity: 1;
+    transition: all 500ms ease;
+}
+
+.button-container .add-button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+
+}
+
 .add-button {
     background-color: white; /* Green */
     border: 2px solid #4CAF50;
@@ -17,10 +55,11 @@ span.logo {
     padding: 0px 10px;
     text-align: center;
     text-decoration: none;
+    transform-origin: 50% 50%;
+    transform: translate(-50%, 0%);
     display: inline-block;
     font-size: 20px;
     text-color: #4CAF50;
-    opacity: 0.6;
 }
 
 .add-button:hover {
@@ -36,6 +75,7 @@ span.logo {
     text-color: #4CAF50;
     opacity: 1;
 }
+
 
 
 #delete_block {
@@ -65,6 +105,7 @@ span.logo {
 
 <!-- arrow ->
 .arrow-2 {
+
 }
 .arrow-2-top,
 .arrow-2-bottom {
@@ -147,3 +188,8 @@ span.logo {
 @keyframes p{
   from{--p:0}
 }
+
+
+
+
+

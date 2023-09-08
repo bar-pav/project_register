@@ -70,7 +70,6 @@ def equipment_list(request):
     active_tab = categories[0][1]
     if 't' in request.GET:
         active_tab = request.GET.get('t')
-        print(active_tab)
     upload_form = UploadFromFileForm()
     context = {
         'equipments': equipments_by_type,
@@ -551,13 +550,14 @@ def objects_list_view(request, model):
 
 
 def connection_form_view(request):
-    my_formset = CustomFormset(ConnectionForm, request.POST)
-    my_formset.cath_action_with_form()
-    context = {
-        'formset': my_formset,
-        'num_forms': len(my_formset)
-    }
-    return render(request, 'connection_edit.html', context=context)
+    # my_formset = CustomFormset(ConnectionForm, request.POST)
+    # my_formset.cath_action_with_form()
+    # context = {
+    #     'formset': my_formset,
+    #     'num_forms': len(my_formset)
+    # }
+    # return render(request, 'connection_edit.html', context=context)
+    pass
 
 
 def get_port_set_for_communication(communication_instance):
@@ -675,10 +675,23 @@ def connection_edit(request, pk):
 def get_ports_test(request):
     """ Получает данные из AJAX запроса для формы выбора порта. """
     print('request GET:', request.GET)
-    endpoint_id = request.GET.get('endpoint')
-    equipment_type = request.GET.get('equipment_type')
-    equipment_id = request.GET.get('equipment')
-    form_index = request.GET.get('id').split('_')[1]
+    port_name = request.GET.get('port_name')
+    print('port_name:', port_name)
+    if 'id' in request.GET:
+        form_index = request.GET.get('id')
+    else:
+        form_index = None
+    if port_name:
+        port = get_object_or_404(Port, pk=port_name)
+        endpoint_id = port.equipment.endpoint.id
+        equipment_type = port.equipment.type
+        equipment_id = port.equipment.id
+    else:
+        endpoint_id = request.GET.get('endpoint')
+        equipment_type = request.GET.get('equipment_type')
+        equipment_id = request.GET.get('equipment')
+    if form_index:
+        form_index = form_index.split('_')[1]
     communication_type = request.GET.get('communication_type')
     if request.method == 'GET':
         form = OnePointConnectionForm(initial={'endpoint': endpoint_id,
@@ -696,6 +709,7 @@ def get_ports_test(request):
             'form': form
         }
         return render(request, 'connection_edit_ajax_response.html', context=context)
+        # return HttpResponse(form.as_p())
 
 
 def is_ports_empty(ports):
@@ -752,6 +766,7 @@ def connection_edit_with_filter(request, pk):
                 if related_ports:
                     release_ports_for_communication(communication)
                 if is_ports_empty(ports):
+                    print('Ports empty')
                     if len(ports) == 1:
                         ports[0].communication = communication
                         ports[0].save()
@@ -763,6 +778,8 @@ def connection_edit_with_filter(request, pk):
                             ports[port].save()
                             ports[next_port].save()
                     return redirect('communication_detail', pk=communication.id)
+                else:
+                    print('!!!! SOME PORTS BUSY')
                 # else:
                 #     messages.add_message(request, messages.ERROR, f'Порт "{busy_ports(ports)}" занят.')
 
@@ -772,6 +789,16 @@ def connection_edit_with_filter(request, pk):
         'num_forms': len(my_formset),
     }
     return render(request, 'connection_edit_with_filter.html', context=context)
+
+
+def connection_edit_v2(request, pk):
+    communication = get_object_or_404(Communication, pk=pk)
+    form = OnePointConnectionForm()
+    context = {
+        'communication': communication,
+        'form': form,
+    }
+    return render(request, 'connection_edit_v2.html', context=context)
 
 
 def search_communication(request):

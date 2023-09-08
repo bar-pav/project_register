@@ -1,0 +1,14 @@
+<div class="card my-2 shadow-lg">
+
+    <div class="card-body bg-light m-0 p-3">
+        <button type="button" class="close remove" aria-label="Close"><span class="remove" aria-hidden="true">&times;</span></button>
+        {% load static %}
+        <img class="edit-card m-1" src="{% static 'images/icons/icon_edit.png' %}" width="20px" height="20px">
+        <br>
+        <sub class="endpoint text-muted badge" data-value="{{ port.equipment.endpoint.id }}">{{ port.equipment.endpoint }}</sub>
+        <p class="card-subtitle my-2 text-muted equipment_type" data-value="{{ port.equipment.type }}">{{ port.equipment.get_type_display }}</p>
+        <p class="card-title equipment h4 bg-{% if port.equipment.type == 'E' %}primary{% elif port.equipment.type == 'F' %}info{% else %}light{% endif %} p-3 rounded" data-value="{{ port.equipment.id }}">{{ port.equipment }}</p>
+        <p class="card-text port_name h5" data-value="{{ port.id }}"><span class="text-muted"></span> <b>{{ port.port_name }}</b></p>
+        <input name="port_name" type="hidden" value="{{ port.id }}">
+    </div>
+</div>

@@ -1,14 +1,20 @@
-{% for field in form %}
+<div id="search_form">
 
- <div class="col">
-    <div class="input-group">
-        <div class="input-group-prepend">
-            <span class="input-group-text">{{ field.label }}</span>
+    {% for field in form %}
+
+     <div class="col">
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <span class="input-group-text">{{ field.label }}</span>
+            </div>
+        {{ field }}
         </div>
-    {{ field }}
     </div>
-</div>
-{% endfor %}
- <div class="col">
-    <input type="submit" class="btn btn-danger" name="delete-{{ form.index }}" value="delete field {{ form.index }}">
+
+    {% endfor %}
+
+     <div class="col">
+        <input type="submit" class="btn btn-danger" name="delete-{{ form.index }}" value="delete field {{ form.index }}">
+    </div>
+
 </div>

@@ -157,7 +157,6 @@ class PortModelForm(forms.Form):
 # New connection point form TODO
 class OnePointConnectionForm(forms.Form):
     endpoint = forms.ModelChoiceField(queryset=None, required=False)
-    # equipment_type = forms.ModelChoiceField(queryset=None, required=False)
     equipment_type = forms.ChoiceField(choices=Equipment.type_choices, required=False,)
     equipment = forms.ModelChoiceField(queryset=None, required=False)
     port = forms.ModelChoiceField(queryset=None, required=False)
@@ -200,7 +199,7 @@ class OnePointConnectionForm(forms.Form):
                 if equipment:
                     # ports = Port.objects.filter(equipment=equipment).filter(connected_to=None).filter(communication=None)
                     print('commun type:', self.communication_type)
-                    ports = Port.objects.filter(equipment=equipment).filter(Q(connected_to__equipment__type='F') | Q(connected_to=None)).filter(communication=None)
+                    ports = Port.objects.filter(equipment=equipment).filter(connected_to=None).filter(communication=None).filter(connected_from=None)
                     if self.communication_type:
                         ports = ports.filter(interface_type=self.communication_type)
 
@@ -223,7 +222,8 @@ class OnePointConnectionForm(forms.Form):
             self.add_error('port', 'Error: Port field is empty.')
 
 
-
+class PortsForm(forms.Form):
+    port_name = forms.HiddenInput()
 
 
 class ManagementForm(forms.Form):

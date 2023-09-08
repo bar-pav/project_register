@@ -2,109 +2,113 @@
 
 {% block content %}
 
-    {% if communication %}
-        <div class="container my-3 p-3 rounded shadow-lg">
-            <div class="d-inline h1">
-                Связь: {{ communication.name }}
-            </div>
-            <div class="d-inline">
-                (#{{ communication.id }})
-            </div>
-                {% if communication.communication_type %}
-                    Тип связи: <span class="badge badge-primary">{{ communication.communication_type }}</span>
-                {% else %}
-                    <span class="badge badge-warning">Тип связи не задан</span>
-                {% endif %}
-            <br>
-            <div class="mx-5 my-3">{% if communication.direction_from or communication.direction_to %}
-                <span class="h5">Направление:</span><span class="h3">{% if communication.direction_from and communication.direction_to %}
-                                {{ communication.direction_from.code }} -
-                            {% else %}
-                                    {{ communication.direction_from.code }}
-                            {% endif %}
-                            {% if communication.direction_to %}
-                                    {{ communication.direction_to.code }}
-                            {% endif %}
-                        {% endif %}
-                </span>
-            </div>
-            <div class="mx-5 my-3">
-                {% if communication.consumer %}
-                    <span class="h5">Потребитель: </span> <span class="h3">{{ communication.consumer }}</span>
-                {% endif %}
-            </div>
-
-            {% if communication.note %}
-                <div class="mx-5 my-3">
-                    <span class="h6">Дополнительная информация: </span> <span class="h6">{{ communication.note }}</span>
-                </div>
+{% if communication %}
+    <div class="container my-3 p-3 rounded shadow-lg">
+        <div class="d-inline h1">
+            Связь: {{ communication.name }}
+        </div>
+        <div class="d-inline">
+            (#{{ communication.id }})
+        </div>
+            {% if communication.communication_type %}
+                Тип связи: <span class="badge badge-primary">{{ communication.communication_type }}</span>
+            {% else %}
+                <span class="badge badge-warning">Тип связи не задан</span>
             {% endif %}
+        <br>
+        <div class="mx-5 my-3">{% if communication.direction_from or communication.direction_to %}
+            <span class="h5">Направление:</span><span class="h3">{% if communication.direction_from and communication.direction_to %}
+                            {{ communication.direction_from.code }} -
+                        {% else %}
+                                {{ communication.direction_from.code }}
+                        {% endif %}
+                        {% if communication.direction_to %}
+                                {{ communication.direction_to.code }}
+                        {% endif %}
+                    {% endif %}
+            </span>
+        </div>
+        <div class="mx-5 my-3">
+            {% if communication.consumer %}
+                <span class="h5">Потребитель: </span> <span class="h3">{{ communication.consumer }}</span>
+            {% endif %}
+        </div>
+
+        {% if communication.note %}
+            <div class="mx-5 my-3">
+                <span class="h6">Дополнительная информация: </span> <span class="h6">{{ communication.note }}</span>
+            </div>
+        {% endif %}
+
+    </div>
+
+    {% if communication.ports.all %}
+
+        <div class="clearfix mx-5 mt-5 mb-2">
+            <p class="h3 float-left">Порты</p>
+            <a href="{% url 'connections_delete' communication.pk %}" class="btn btn-danger float-right ">Удалить коннекции</a>
+            <a href="{% url 'connection_edit_with_filter' communication.pk %}" class="btn btn-info float-right mx-2">Изменить порты</a>
+
+
+            <p><a href="{% url 'connection_edit_v2' communication.pk %}" class="btn btn-info float-right mx-2">Изменить V2</a></p>
 
         </div>
 
-        {% if communication.ports.all %}
+        <div class="mx-5 d-flex flex-wrap">
 
-            <div class="clearfix mx-5 mt-5 mb-2">
-                <p class="h3 float-left">Порты</p>
-                <a href="{% url 'connections_delete' communication.pk %}" class="btn btn-danger float-right ">Удалить коннекции</a>
-                <a href="{% url 'connection_edit_with_filter' communication.pk %}" class="btn btn-info float-right mx-2">Изменить порты</a>
-            </div>
+            {% for port in communication.ports.all %}
 
-            <div class="mx-5 d-flex flex-wrap">
+                    {% if port.frame_name %}
 
-                {% for port in communication.ports.all %}
+                <div class="card my-2 shadow-lg" style="width: 15rem;">
+                    <div class="card-body bg-light">
+                        <h5 class="card-title bg-secondary p-3 rounded">{{ port.equipment }}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted"></h6>
+                        <p class="card-text text-muted">Рамка {{ port.frame_name }} (Порт оборудования: {{ port.port_name }})</p>
+                        <a href="#" class="card-link"></a>
+                        <a href="#" class="card-link"></a>
+                    </div>
+                </div>
 
-                        {% if port.frame_name %}
-
-                    <div class="card my-2 shadow-lg" style="width: 15rem;">
-                        <div class="card-body bg-light">
-                            <h5 class="card-title bg-secondary p-3 rounded">{{ port.equipment }}</h5>
-                            <h6 class="card-subtitle mb-2 text-muted"></h6>
-                            <p class="card-text text-muted">Рамка {{ port.frame_name }} (Порт оборудования: {{ port.port_name }})</p>
-                            <a href="#" class="card-link"></a>
-                            <a href="#" class="card-link"></a>
+                    <div class="d-inline align-middle" style="width: 4rem; position:relative;">
+                        <div class="arrow-2">
+                            <div class="arrow-2-top"></div>
+                            <div class="arrow-2-bottom"></div>
                         </div>
                     </div>
-
-                        <div class="d-inline align-middle" style="width: 4rem; position:relative;">
-                            <div class="arrow-2">
-                                <div class="arrow-2-top"></div>
-                                <div class="arrow-2-bottom"></div>
-                            </div>
-                        </div>
-                        {% endif %}
-
-                    <div class="card my-2 shadow-lg" style="width: 15rem;">
-                        <div class="card-body bg-light">
-                            <h5 class="card-title bg-{% if port.equipment.type == 'E' %}primary{% elif port.equipment.type == 'F' %}info{% else %}light{% endif %} p-3 rounded">{{ port.equipment }}</h5>
-                            <h6 class="card-subtitle mb-2 text-muted">{{ port.equipment.get_type_display }}</h6>
-                            <p class="card-text">Порт: {{ port.get_port_name }}</p>
-                            <a href="#" class="card-link"></a>
-                            <a href="#" class="card-link"></a>
-                        </div>
-                    </div>
-                    {% if not forloop.last %}
-                        <div class="d-inline align-middle" style="width: 4rem; position:relative;">
-                            <div class="arrow-2">
-                                <div class="arrow-2-top"></div>
-                                <div class="arrow-2-bottom"></div>
-                            </div>
-                        </div>
                     {% endif %}
-                {% endfor %}
 
-            </div>
+                <div class="card my-2 shadow-lg" style="width: 15rem;">
+                    <div class="card-body bg-light">
+                        <h5 class="card-title bg-{% if port.equipment.type == 'E' %}primary{% elif port.equipment.type == 'F' %}info{% else %}light{% endif %} p-3 rounded">{{ port.equipment }}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">{{ port.equipment.get_type_display }}</h6>
+                        <p class="card-text">Порт: {{ port.get_port_name }}</p>
+                        <a href="#" class="card-link"></a>
+                        <a href="#" class="card-link"></a>
+                    </div>
+                </div>
+                {% if not forloop.last %}
+                    <div class="d-inline align-middle" style="width: 4rem; position:relative;">
+                        <div class="arrow-2">
+                            <div class="arrow-2-top"></div>
+                            <div class="arrow-2-bottom"></div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
 
-            <div class="clearfix px-5">
-                <button type="button" class="btn btn-dark float-right" data-toggle="modal" data-target="#sendmail_modal">Отправить трассу</button>
-            </div>
-        {% else %}
-            <p class="mx-5 "><a href="{% url 'connection_edit_with_filter' communication.pk %}" class="btn btn-success">Добавить коннекции</a></p>
-        {% endif %}
+        </div>
+
+        <div class="clearfix px-5">
+            <button type="button" class="btn btn-dark float-right" data-toggle="modal" data-target="#sendmail_modal">Отправить трассу</button>
+        </div>
     {% else %}
-        <p>Связь не найдена.</p>
-
+        <p class="mx-5 "><a href="{% url 'connection_edit_with_filter' communication.pk %}" class="btn btn-success">Добавить коннекции</a></p>
     {% endif %}
+{% else %}
+    <p>Связь не найдена.</p>
+
+{% endif %}
 
 
 

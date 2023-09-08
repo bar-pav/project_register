@@ -64,10 +64,10 @@ class Port(models.Model):
     communication = models.ForeignKey('Communication', on_delete=models.RESTRICT, null=True, blank=True, related_name='ports')
 
     def __str__(self):
-        return f"({self.equipment.endpoint})[{self.equipment}]{self.port_name}"
+        return f"{self.port_name}"
 
     def get_port_name(self):
-        return f"{self.port_name}"
+        return f"({self.equipment.endpoint})[{self.equipment}]{self.port_name}"
 
     def is_empty(self):
         return not self.connected_to and not self.communication

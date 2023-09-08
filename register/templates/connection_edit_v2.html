@@ -1,0 +1,311 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<p class="h1">V2</p>
+<h1>Точки проключения для связи: "{{ communication.name }}"</h1>
+
+<form method="post">{% csrf_token %}
+
+
+<!--    ----------------------------------------------------------------------------------------------->
+    {% if communication %}
+
+        {% if communication.ports.all %}
+
+
+
+            <div id="cards_block" class="mx-5 d-flex flex-wrap">
+
+                <div class="d-flex between-filler mx-2">
+                    <div class="button-container">
+                        <input id="111" type="button" value="+" class="add-button"><p></p>
+                    </div>
+                </div>
+                {% for port in communication.ports.all %}
+
+                    {% include 'card_template.html' %}
+
+
+                    <div class="d-flex between-filler mx-2">
+                        <div class="button-container">
+                            <input id="222" type="button" value="+" class="add-button"><p></p>
+                        </div>
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+            <div class="clearfix px-5">
+                <button type="button" class="btn btn-dark float-right" data-toggle="modal" data-target="#sendmail_modal">Отправить трассу</button>
+            </div>
+        {% else %}
+            <p class="mx-5 "><a href="{% url 'connection_edit_with_filter' communication.pk %}" class="btn btn-success">Добавить коннекции</a></p>
+        {% endif %}
+    {% else %}
+        <p>Связь не найдена.</p>
+
+    {% endif %}
+
+
+
+
+    <template id="card_template">
+                        <div class="d-flex between-filler mx-2">
+                    <div class="button-container">
+                        <input type="button" value="+" class="add-button"><p></p>
+                    </div>
+                </div>
+        {% include 'card_template.html' %}
+
+                        <div class="d-flex between-filler mx-2">
+                    <div class="button-container">
+                        <input type="button" value="+" class="add-button"><p></p>
+                    </div>
+                </div>
+    </template>
+
+
+    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#port_filter_modal">
+  Launch modal
+</button>
+
+
+        <div class="modal" id="port_filter_modal" tabindex="-1" role="dialog" aria-labelledby="" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-body port_form">
+
+                        {% include 'connection_edit_ajax_response.html' %}
+
+                    </div>
+                    <button id="confirm_port" type="button" class="btn btn-primary" data-toggle="modal" data-target="#port_filter_modal">
+                        OK
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    <script>
+
+        $(document).ready(
+            $('#cards_block').on('click', (event) => {
+                // Обработчик нажатия по элементу '#card_block', который содержит карточки портов.
+                // Шаблон карточек хранится в файле .html. event.preventDefault();
+
+                card = $(event.target).closest('.card')
+                if(event.target.classList.contains('add-button'))
+                    {
+                        add_card(event.target);
+                    }
+                if(event.target.classList.contains('edit-card'))
+                    {
+                        edit_card(card)
+                    }
+                if(event.target.classList.contains('remove'))
+                    {
+                        remove_card(card)
+                    }
+            })
+        )
+
+
+        $(document).ready(
+            // Фильтр портов. С помощью AJAX запрашивает список элементов для полей select при каждом изменении блока с
+            // классом .filter.
+            // Поля, по которым должна проходить фильтрация на сервере, должны быть дочерними к полям, содержащим класс
+            // '.filter',
+            // Событие отслеживается относительно блока с данным классом. Поле для выбора порта не является дочерним от
+            // блока с div.filter.
+
+            $('.port_form').on('change', ".filter", (e) => {
+                e.preventDefault();
+                $.ajax({
+                    data: {
+                            'endpoint': get_value(e.target, 'endpoint'),
+                            'equipment_type': get_value(e.target, 'equipment_type'),
+                            'equipment': get_value(e.target, 'equipment'),
+                            'id': e.target.attributes.id.value,
+                            // 'communication_type': '{{ formset.communication_type.id }}',
+                            },
+                    url: "{% url 'get_ports_test' %}",
+                    context: e.delegateTarget,
+                    success: function (response) {
+                        if (response) {
+                            $(this).html(response);
+                        }
+                        else {
+                            console.log('Empty response from server while filtering in modal window!')
+                        }
+                    },
+                    error: function (response) {
+                        console.log('AJAX request was finished with ERROR.')
+                    }
+                });
+                return false;
+            })
+        )
+
+        function parse_card(card, name, new_value){
+            /*
+                Возвращает из 'card' значение, содержащееся в атрибуте 'data-value'.
+            */
+
+            found = card.find(`.${name}`)
+            if(found.length == 1){
+                if(new_value){
+                    found[0].dataset['value'] = new_value
+                    }
+                return found[0].dataset['value']
+            }
+            else{
+                console.log(`not found .${name}`)
+            }
+        }
+
+        function get_value(target, name){
+            /*
+                Функция получает значение из поля select с параметром name `select[name="name"]` формы фильтра портов.
+            */
+
+            if ($(target).attr('name') == name){
+                return $(target)[0].value
+            }
+            select_element = $(target).closest('#search_form').find(`select[name="${name}"]`)
+            if (select_element.length == 1){
+                return select_element[0].value
+            }
+            else {
+                console.log(`Number of found elements "${name}" in filter_form != 1`)
+                return null
+            }
+        }
+
+        function add_card(target) {
+            /*
+                Функция заменяет родительский для "event.target" элемент, который содержит класс ".between-filler"
+                на элемент состоящий из "карты" и двух таких же кнопок добавить справа и слева от него, который создается
+                из шаблона в теге <template>.
+            */
+
+            var cards_block = $('#cards_block')[0]
+            if ("content" in document.createElement("template")) {
+                var template = document.querySelector("#card_template");
+                var clone = template.content.cloneNode(true);
+                var replaced_child = $(target).closest('.between-filler')[0]
+                cards_block.replaceChild(clone, replaced_child)
+            }
+        }
+
+
+        function remove_card(card){
+            /*
+                Функция удаляет элемент card и следующий за ней элемент between-filler, содержащий кнопку добавить.
+                Выполнено с задержкой 500мс для анимации.
+            */
+
+            card.addClass('card-delete')
+            setTimeout(() => {
+                card.next().remove();
+                card.remove();
+                }, 500)
+        }
+
+        function edit_card(card){
+            /*
+                Функция получает заполненную форму для фильтра портов по данным, содержащимся в элементе 'card'.
+                Если 'card' не содержит port, то форма будет не заполнена.
+            */
+            card.addClass('edited-card')
+
+            var endpoint, equipment_type, equipment
+            let port_name = parse_card(card, 'port_name')
+            if(!port_name){
+                endpoint = parse_card(card, 'endpoint')
+                equipment_type = parse_card(card, 'equipment_type')
+                equipment = parse_card(card, 'equipment')
+            }
+            $.ajax({
+                    data: {
+                            'endpoint': endpoint,
+                            'equipment_type': equipment_type,
+                            'equipment': equipment,
+                            'port_name': port_name,
+                            //'id': target.attributes.id.value,
+                            },
+                    url: "{% url 'get_ports_test' %}",
+                    success: function (response) {
+                        if (response) {
+                            $('.modal-body').html(response);
+                            $('#port_filter_modal').modal('toggle');
+                        }
+                        else {
+                            console.log('Empty response from server while filtering in modal window!')
+
+                        }
+                    },
+                    error: function (response) {
+                        console.log('Error was occurred while try get filled filter form from server')
+                        }
+                    })
+        }
+
+        $('#port_filter_modal').on('click','#confirm_port', confirm_port_handler)
+
+        function confirm_port_handler(){
+                card = $('#cards_block').find('.edited-card')
+                if(card.length != 1){
+                    console.log("Not found 'edited-card'")
+                    return
+                }
+                endpoint = $('.port_form').find("select[name='endpoint'] option:selected").text()
+                endpoint_value = $('.port_form').find("select[name='endpoint'] option:selected").val()
+                equipment_type = $('.port_form').find("select[name='equipment_type'] option:selected").text()
+                equipment_type_value = $('.port_form').find("select[name='equipment_type'] option:selected").val()
+                equipment = $('.port_form').find("select[name='equipment'] option:selected").text()
+                equipment_value = $('.port_form').find("select[name='equipment'] option:selected").val()
+                port_name = $('.port_form').find("select[name='port'] option:selected").text()
+                port_name_value = $('.port_form').find("select[name='port'] option:selected").val()
+
+                fill_card(card, endpoint, endpoint_value, equipment_type, equipment_type_value, equipment, equipment_value, port_name, port_name_value)
+                // card.removeClass('edited-card')
+        }
+
+        $('#port_filter_modal').on('hidden.bs.modal', (e) => {
+            $('.card').removeClass('edited-card')
+        })
+
+        function fill_card(card, endpoint, endpoint_value, equipment_type, equipment_type_value, equipment, equipment_value, port_name, port_name_value){
+            /*
+                Заполняет card переданными значениями.
+            */
+
+            card.find('.endpoint').text(endpoint)
+            parse_card(card, 'endpoint', endpoint_value)
+
+            card.find('.equipment_type').text(equipment_type)
+            parse_card(card, 'equipment_type', equipment_type_value)
+
+            card.find('.equipment').text(equipment)
+            parse_card(card, 'equipment', equipment_value)
+
+            card.find('.port_name').text(port_name)
+            parse_card(card, 'port_name', port_name_value)
+
+            card.find("[name='port_name']").val(port_name_value)
+        }
+
+    </script>
+
+
+    <input type="submit" name="submit" value="Сохранить" class="btn btn-success">
+    <a href="{% url 'communications' %}" type="button" name="cancel" class="btn btn-secondary">Отмена</a>
+
+</form>
+
+
+{% endblock %}
+
+
+
+

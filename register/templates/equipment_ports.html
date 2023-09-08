@@ -106,17 +106,26 @@
                         {% endif %}
                     </td>
                     <td>
-                                            {% if form.instance.communication %}
+                        {% if form.instance.communication %}
 
-                        <a href="{% url 'connection_edit_with_filter' form.instance.communication.id %}">
+                            <a href="{% url 'connection_edit_with_filter' form.instance.communication.id %}">
+
                             {% if form.instance.connected_to %}
-                                    / {{ form.instance.connected_to }}[{{ form.instance.connected_to.equipment }}]
+                                / {{ form.instance.connected_to.port_name }}[{{ form.instance.connected_to.equipment }}]
                             {% endif %}<p></p>
                             {% if form.instance.connected_from %}
-                                    \ {{ form.instance.connected_from }}[{{ form.instance.connected_from.equipment }}]
+                                    \ {{ form.instance.connected_from.port_name }}[{{ form.instance.connected_from.equipment }}]
+                            {% endif %}
+
+                            </a>
+                        {% else %}
+                            {% if form.instance.connected_to %}
+                                / {{ form.instance.connected_to.port_name }}[{{ form.instance.connected_to.equipment }}]
+                            {% endif %}<p></p>
+                            {% if form.instance.connected_from %}
+                                \ {{ form.instance.connected_from.port_name }}[{{ form.instance.connected_from.equipment }}]
+                            {% endif %}
                         {% endif %}
-                        </a>
-                                            {% endif %}
 
                     </td>
                     <td>
